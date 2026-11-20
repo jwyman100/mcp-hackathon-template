@@ -1,0 +1,43 @@
+[
+  {
+    "id": "NOAA-A01",
+    "split": "published_reference",
+    "source_concept": "Compare public snapshot station-record coverage with NOAA's published 2025 representative/non-representative station counts.",
+    "question": "NOAA's 2025 Spring Bottom Trawl Survey report says its Overview recorded 370 representative stations and 25 non-representative stations (https://repository.library.noaa.gov/view/noaa/72382, PDF p. 1). Using the public fisheries MCP server, retrieve the 2025 station-record count and compare it with that report. Does the matching aggregate count mean all snapshot records are representative hauls? Explain what the comparison establishes and what it does not.",
+    "tool": "get_spring_survey_coverage",
+    "request": {
+      "start_year": 2025,
+      "end_year": 2025
+    },
+    "check": "coverage",
+    "rubric": [
+      "Calls get_spring_survey_coverage for 2025 and reports 395 station records.",
+      "Recognizes that NOAA reports 370 representative plus 25 non-representative stations, totaling 395.",
+      "Does not call all 395 records representative; the report explicitly separates 25 non-representative stations.",
+      "Explains that aggregate numerical agreement does not prove record-by-record identity or establish valid-haul status from the MCP count.",
+      "Identifies the public snapshot and cites the NOAA report."
+    ],
+    "reference_answer": "For 2025, the public MCP snapshot reports 395 station records. NOAA's 2025 Spring Bottom Trawl Survey report states 370 representative and 25 non-representative stations, which also totals 395. The aggregate counts agree, but that does not make all 395 snapshot records representative: NOAA distinguishes 25 as non-representative. Nor does equal totals prove that the records match one-to-one. The MCP tool counts station records and does not apply haul/gear validity filtering, so its count alone cannot establish the number of valid representative hauls.",
+    "expected_facts": [
+      "The 2025 public MCP snapshot returns 395 station records, one cruise, and 82 sampled strata.",
+      "The NOAA report Overview states 370 representative and 25 non-representative stations; these sum to 395.",
+      "The 395-count agreement is aggregate agreement only; it does not by itself reconcile the records or change the MCP count into a representative-haul count.",
+      "The MCP coverage tool says its count is station records, not necessarily valid hauls, and does not apply haul/gear validity filtering."
+    ],
+    "source": {
+      "title": "2025 Spring Bottom Trawl Survey",
+      "landing_page": "https://repository.library.noaa.gov/view/noaa/72382",
+      "pdf": "https://repository.library.noaa.gov/view/noaa/72382/noaa_72382_DS1.pdf",
+      "doi": "https://doi.org/10.25923/zv6b-t597",
+      "pdf_page": 1,
+      "report_sha512": "0d4bd7f1bd7e78227eac7ea3406e0242859b9ece3c97c6e0066df5440b69a8dff1c56fd98c1c0fd09d20398233080c8f4eac0957fa6883a3feba68599b10f1c0",
+      "report_counts": {
+        "representative_stations": 370,
+        "non_representative_stations": 25,
+        "total_stations": 395
+      },
+      "report_scope_note": "Use the Overview counts only. The report's later Results paragraph has inconsistent wording about the number planned; this benchmark makes no completion-rate claim."
+    },
+    "source_archive_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd"
+  }
+]

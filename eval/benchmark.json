@@ -1,0 +1,51 @@
+{
+  "suite": "NEFSC spring public-snapshot scientific evaluation",
+  "version": "2.0.0",
+  "adaptation": {
+    "source": "ITD-DDB-MCP scientific evaluation methodology",
+    "rule": "Adapt question concepts and pass criteria only; use the independently verified public snapshot, not internal data or answers.",
+    "scope": {
+      "season": "spring",
+      "survey": "audited NEFSC bottom-trawl records in the pinned public extract",
+      "years": [2021, 2025],
+      "species_codes": ["073", "074"],
+      "species": ["Atlantic cod", "haddock"],
+      "limitations": [
+        "The public extract is a selected snapshot, not a complete survey species catalog.",
+        "The source metadata does not specify EXPCATCHWT units.",
+        "Station records are not necessarily valid tows or standardized effort.",
+        "Catch totals do not establish population abundance, biomass, recruitment, fishing mortality, or stock status."
+      ]
+    }
+  },
+  "splits": {
+    "development": ["Q01", "Q02", "Q03", "Q05", "Q07", "Q08", "Q09", "Q10"],
+    "holdout": ["Q04", "Q06", "Q11", "Q12"],
+    "holdout_note": "Frozen for the next agent-evaluation iteration; this is a prospective holdout, not a blind set, because its cases and criteria are checked into the repository."
+  },
+  "evaluation_layers": {
+    "scripted_stdio": "Direct MCP calls, output-schema validation, and independent raw-CSV/Decimal reconciliation; does not score LLM behavior.",
+    "agent_quality": "A supplied 33-trial repeat set covers NOAA A01/B01/C01 and Q01/Q02/Q03/Q05/Q07/Q08/Q09/Q10. All 76 successful tool payloads matched the pinned raw-CSV reference; answer-level review identifies repeated tool and interpretation weaknesses. Every trial remains UNVERIFIED; run configuration and evaluated database identity are unavailable. No independent scientific review or overall agent pass is claimed; see submission/public-evaluation-appendix.md and eval/published_reference/repeated-trials-review.md. Historical agent_evaluation fields below describe scripted artifacts, not these later agent trials.",
+    "hill_climb": "Change one documented tool-schema, description, or prompt factor at a time; compare fixed development questions to the preserved baseline; use the frozen holdout only for confirmation. Report negative results and repeat agent trials."
+  },
+  "baseline": {
+    "artifact": "results/scripted.json",
+    "questions_sha256": "ca075bb22fd5b1716aa6577540f1c03158b6c93ec652343407bd0a719a70c5c0",
+    "date": "2026-11-18",
+    "scripted_trials": 36,
+    "scripted_passed": 36,
+    "agent_evaluation": "not_run"
+  },
+  "candidate": {
+    "artifact": "results/candidate-v2-all.json",
+    "questions_sha256": "cc34290165e9728c14186004098779cfce652325cbfb09c415ee1540b68000aa",
+    "change": "Tightened MCP schemas/descriptions to match the fixed 2021-2025 snapshot and exactly two comparable species; added supported/unsupported analysis declarations to the resource.",
+    "scripted_trials": 36,
+    "scripted_passed": 36,
+    "development": {"trials": 24, "passed": 24},
+    "holdout": {"trials": 12, "passed": 12},
+    "agent_evaluation": "not_run",
+    "interpretation": "All direct MCP/data-contract checks pass before and after. This is not evidence of improved agent selection, prose, or scientific reasoning."
+  },
+  "latency_note": "Baseline and candidate round-trip measurements are descriptive only; no latency improvement is claimed from these small runs."
+}

@@ -1,0 +1,212 @@
+{
+  "created_at_utc": "2026-11-20T15:53:39.008069+00:00",
+  "database_sha256": "8715c420a1ea48f003d0c51457df6c940dc677b4522b9f992ea33c9006893b6d",
+  "execution_mode": "scripted_mcp_stdio",
+  "interpretation_limits": [
+    "These are published expanded catch totals, not population abundance estimates.",
+    "Coverage counts station records, not effort-standardized or valid-haul counts.",
+    "No haul/gear validity, stratum-area weighting, or vessel calibration is applied.",
+    "Missing catch rows are unknown, not observed zero; absent species rows do not establish zero-catch tows.",
+    "No selected station records do not establish that no survey effort occurred.",
+    "A count of sampled strata is not a measure or percentage of geographic area.",
+    "If any measurement is unknown, its annual total is null; known subtotals are reported separately.",
+    "EXPCATCHWT units are unspecified in the linked public metadata; do not assume a unit or conversion without an authoritative reference.",
+    "The fixed public snapshot is not live or a complete species catalog.",
+    "These are curated statements from the linked NOAA page, not live report retrieval or facts derived from snapshot rows.",
+    "The report's sampled trawl stations and the snapshot's station records are distinct measures; no reconciliation is implied.",
+    "Neither a stratum count nor catch totals establish geographic area coverage, the cause of catch changes, or a population trend."
+  ],
+  "public_source": {
+    "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+    "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025"
+  },
+  "question": "How should 2023 cod catch be interpreted against 2022?",
+  "receipt_version": 1,
+  "scientific_review_status": "unverified",
+  "scope": {
+    "end_year": 2023,
+    "maximum_stratum": "99999",
+    "minimum_stratum": "00000",
+    "start_year": 2022
+  },
+  "server_source_sha256": {
+    "src/fisheries_mcp/__init__.py": "1eb8951662f3327fa654d090c72bf9b4a3c00f7ef3f81ece18b1b308b48004cb",
+    "src/fisheries_mcp/app.py": "52494a279aea2b7e99137f2ceb139931c76ed6e9e9fca0f88fef31a44a8fd716",
+    "src/fisheries_mcp/config.py": "6ae054ffdd9c3ad001f8d844989d060f8efd2d2c5fe9f1609e7dc1342daabbe6",
+    "src/fisheries_mcp/data.py": "5bffbeeb689d1dbeb1154eb4aa1ea9058bf5d4446f1c6660209424adaa4b77af",
+    "src/fisheries_mcp/models.py": "c50a9b0ea3c3d939c824405869758cd88e8efc8ee4918dc1e04a2dba23d8e437",
+    "src/fisheries_mcp/prepare.py": "2697142044a198aee16afb34d9ddc85883554c857f0fddf52959fc4dabaf5a88",
+    "src/fisheries_mcp/tools/__init__.py": "d40015a8d06f92cbd4b9b8df05bca8c1bb6b4cd3b081e0a1d48114c9d5199d08",
+    "src/fisheries_mcp/tools/compare.py": "219e4f4fbb95e0cad0a3fe2392e199c2f8e328229cd42ff22259df20f6c5cfe3",
+    "src/fisheries_mcp/tools/coverage.py": "e9a393f827319141e09675580b2dfa1c9acc9f54046c26f828369269ddc325ad",
+    "src/fisheries_mcp/tools/report_context.py": "3cc150f3e6598b886a6520c08caec7af000244a721ed3b2f7da36d3f69c330c6",
+    "src/fisheries_mcp/tools/search.py": "69581c5507090c3b90a81343aa5a31d7c4ca1648e6d6408f9dbc487268bef45d",
+    "src/fisheries_mcp/tools/summary.py": "0c32095dafb735e18b3bdb58f9fcc021d1c3bb8c432c5b5a066261f7662a43c3"
+  },
+  "submission_source_sha256": {
+    "submission/demo.py": "b7842a24bfac8a51174c2c61f6ed90481b7b1319eaa2f07055fb3e43fffd73b3",
+    "submission/receipt.py": "0a33e4ced3ae28e93fb632c0f16f51b66f53a37dabd9ec2376748597d584c252"
+  },
+  "tool_calls": [
+    {
+      "arguments": {
+        "request": {
+          "term": "cod"
+        }
+      },
+      "result": {
+        "note": "Only species in this snapshot are searched. No match does not mean a species is absent from the full survey.",
+        "provenance": {
+          "dataset_kind": "public",
+          "end_year": 2025,
+          "extracted_on": "2026-06-25",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "schema_version": 1,
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "start_year": 2021,
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "weight_unit": "source units; unspecified in linked public metadata"
+        },
+        "species": [
+          {
+            "code": "073",
+            "common_name": "Atlantic cod",
+            "published_label": "Gadus morhua (Atlantic cod)",
+            "scientific_name": "Gadus morhua"
+          }
+        ]
+      },
+      "tool": "search_species"
+    },
+    {
+      "arguments": {
+        "request": {
+          "end_year": 2023,
+          "species_name": "Gadus morhua (Atlantic cod)",
+          "start_year": 2022
+        }
+      },
+      "result": {
+        "annual_coverage": [
+          {
+            "cruises": 1,
+            "sampled_strata": 82,
+            "station_records": 378,
+            "status": "observed",
+            "year": 2022
+          },
+          {
+            "cruises": 1,
+            "sampled_strata": 13,
+            "station_records": 77,
+            "status": "observed",
+            "year": 2023
+          }
+        ],
+        "interpretation": [
+          "These are published expanded catch totals, not population abundance estimates.",
+          "Coverage counts station records, not effort-standardized or valid-haul counts.",
+          "No haul/gear validity, stratum-area weighting, or vessel calibration is applied.",
+          "Missing catch rows are unknown, not observed zero; absent species rows do not establish zero-catch tows.",
+          "No selected station records do not establish that no survey effort occurred.",
+          "A count of sampled strata is not a measure or percentage of geographic area.",
+          "If any measurement is unknown, its annual total is null; known subtotals are reported separately.",
+          "EXPCATCHWT units are unspecified in the linked public metadata; do not assume a unit or conversion without an authoritative reference.",
+          "The fixed public snapshot is not live or a complete species catalog."
+        ],
+        "provenance": {
+          "dataset_kind": "public",
+          "end_year": 2025,
+          "extracted_on": "2026-06-25",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "schema_version": 1,
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "start_year": 2021,
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "weight_unit": "source units; unspecified in linked public metadata"
+        },
+        "scope": {
+          "end_year": 2023,
+          "maximum_stratum": "99999",
+          "minimum_stratum": "00000",
+          "start_year": 2022
+        },
+        "series": {
+          "annual_catch": [
+            {
+              "catch_records": 65,
+              "known_expanded_number": 584.0,
+              "known_expanded_weight": 609.78,
+              "status": "observed",
+              "total_expanded_number": 584.0,
+              "total_expanded_weight": 609.78,
+              "unknown_number_records": 0,
+              "unknown_weight_records": 0,
+              "year": 2022
+            },
+            {
+              "catch_records": 24,
+              "known_expanded_number": 284.0,
+              "known_expanded_weight": 416.396,
+              "status": "observed",
+              "total_expanded_number": 284.0,
+              "total_expanded_weight": 416.396,
+              "unknown_number_records": 0,
+              "unknown_weight_records": 0,
+              "year": 2023
+            }
+          ],
+          "species": {
+            "code": "073",
+            "common_name": "Atlantic cod",
+            "published_label": "Gadus morhua (Atlantic cod)",
+            "scientific_name": "Gadus morhua"
+          }
+        }
+      },
+      "tool": "get_spring_catch_summary"
+    },
+    {
+      "arguments": {
+        "request": {
+          "year": 2023
+        }
+      },
+      "result": {
+        "facts": [
+          "NOAA reports that ship repair and maintenance delays reduced sea days by about 75%.",
+          "A crew shortage reduced operations from 24 to 12 hours per day.",
+          "The survey focused on Georges Bank and sampled 70 of 377 planned trawl stations.",
+          "Stations were sampled during daytime only; NOAA says combining these observations with previous day/night data requires additional evaluation."
+        ],
+        "limitations": [
+          "These are curated statements from the linked NOAA page, not live report retrieval or facts derived from snapshot rows.",
+          "The report's sampled trawl stations and the snapshot's station records are distinct measures; no reconciliation is implied.",
+          "Neither a stratum count nor catch totals establish geographic area coverage, the cause of catch changes, or a population trend."
+        ],
+        "source": {
+          "locator": "Opening operational-summary paragraphs",
+          "scientific_review_status": "not_reviewed",
+          "source_checked_on": "2026-11-19",
+          "title": "2023 Northeast Spring Bottom Trawl Survey Summary",
+          "url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/ecosystems/2023-northeast-spring-bottom-trawl-survey-summary"
+        },
+        "year": 2023
+      },
+      "tool": "get_spring_report_context"
+    }
+  ],
+  "weight_unit": "source units; unspecified in linked public metadata"
+}

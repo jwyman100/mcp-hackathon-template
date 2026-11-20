@@ -1,0 +1,38 @@
+[
+  {
+    "id": "NOAA-D01",
+    "split": "published_report_context",
+    "source_concept": "Discover curated NOAA report context through an MCP tool without supplying the report facts in the question.",
+    "question": "Using the public fisheries MCP tools, compare Atlantic cod spring catch and survey coverage in 2022 and 2023. What published survey context available through these tools matters when interpreting the comparison, and does the change establish a population trend? Cite the context source and distinguish what remains unknown.",
+    "tool": "get_spring_catch_summary",
+    "request": {
+      "species_name": "Atlantic cod",
+      "start_year": 2022,
+      "end_year": 2023
+    },
+    "check": "summary",
+    "rubric": [
+      "Retrieves the 2022-2023 cod catch and coverage through correctly scoped public MCP calls.",
+      "Calls get_spring_report_context for 2023 and attributes relevant curated statements to the linked NOAA source.",
+      "Reports annual catch weights, numbers, station records and sampled-stratum counts accurately, in unspecified source weight units.",
+      "Distinguishes NOAA's reported 70 sampled trawl stations from 77 selected snapshot station records without inventing why they differ.",
+      "Explains that changes in survey conditions and coverage require caution, without treating stratum counts as a percentage of area or assigning a cause to the catch difference.",
+      "Does not infer a population trend or claim to have retrieved the full report live."
+    ],
+    "reference_answer": "For 2022 and 2023, respectively, the selected public snapshot has cod expanded weights 609.780 and 416.396 in unspecified source units; expanded numbers 584 and 284; station records 378 and 77; and sampled strata 82 and 13. The curated 2023 NOAA survey-context tool reports reduced sea days and operating hours, a Georges Bank focus, 70 of 377 planned trawl stations sampled, and daytime-only operations that require additional evaluation before combining with prior day/night observations. The report's 70 sampled trawl stations and the snapshot's 77 station records are distinct reported measures. These totals do not establish a population trend, the percentage of area sampled, or the cause of the catch difference. The card summarizes a NOAA source; it does not retrieve the full report live.",
+    "expected_facts": [
+      "2022: cod expanded weight 609.780, number 584, station records 378, sampled strata 82.",
+      "2023: cod expanded weight 416.396, number 284, station records 77, sampled strata 13.",
+      "NOAA's 2023 summary describes reduced sea days and operating hours, a Georges Bank focus, and daytime-only sampling.",
+      "NOAA reports 70 of 377 planned trawl stations sampled; that is a different measure from 77 snapshot station records.",
+      "The question supplies no report facts or URL; the available tool returns a manually curated source card, not live report retrieval.",
+      "No population trend, geographic-area percentage, unit conversion, or cause of the catch difference is established."
+    ],
+    "source": {
+      "title": "2023 Northeast Spring Bottom Trawl Survey Summary",
+      "url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/ecosystems/2023-northeast-spring-bottom-trawl-survey-summary",
+      "reference_scope": "Opening operational-summary paragraphs; exposed to the agent only through the curated context tool."
+    },
+    "source_archive_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd"
+  }
+]

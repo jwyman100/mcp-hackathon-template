@@ -1,48 +1,86 @@
-# Security Policy
+# Security and deployment policy
 
-As a U.S. Government agency, the General Services Administration (GSA) takes seriously our responsibility to protect the public's information, including financial and personal information, from unwarranted disclosure.
+This repository is a public-data hackathon prototype, not an authorized
+production service or an official NOAA or GSA product. The MCP server does not
+implement user authentication, dataset authorization, or a tamper-resistant
+audit trail. Do not connect it to internal Oracle data, credentials, or
+non-public networks.
 
-Software developed by the U.S. General Services Administration (GSA) is subject to the GSA Vulnerability Disclosure Policy.
+## Supported use
 
-Please consult our policy for:
+- The default transport is local stdio.
+- Local HTTP is allowed only on a loopback address.
+- A platform-provided port or non-loopback HTTP bind is rejected unless the
+  operator explicitly sets `MCP_TRUSTED_HTTP_INGRESS=true`.
+- That setting only acknowledges that the operator has verified an approved,
+  authenticated ingress and that direct unauthenticated access is blocked. It
+  does not add authentication or verify the ingress itself.
+- Do not deploy publicly or use an unauthenticated hosted endpoint. Databricks
+  Apps or other hosting environments require a separately verified,
+  agency-approved authentication and network boundary before enabling the
+  setting. IBM Code Engine examples are not approved production deployments.
 
-How to submit a report if you believe you have discovered a vulnerability.
-GSA's coordinated disclosure policy.
-Information on how you may conduct security research on GSA developed software and systems.
-Important legal and policy guidelines.
+The security posture is therefore local/demo only. Hosted deployment, agency
+authorization, and production readiness have not been established.
 
-## Supported Versions
+## Implemented safeguards
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+- Runtime SQLite connections use read-only mode and `PRAGMA query_only=ON`.
+- Queries are parameterized and request models bound query scope.
+- Runtime tools make no outbound requests. The importer uses a fixed official
+  source, disables redirects and environment proxies, and verifies a pinned
+  archive hash and size bounds.
+- The container uses pinned base/build image digests, installs from `uv.lock`,
+  runs as a non-root user, and is exercised with a read-only filesystem and
+  dropped Linux capabilities in CI.
+- CI scans the repository history for secrets and audits locked runtime
+  dependencies. Dependabot proposes updates for Python, actions, and container
+  images; review and merge those updates deliberately.
 
-| Version (Branch) | Supported          |
-| ------- | ------------------ |
-| main   | :white_check_mark: |
-| other  | :x:
+Do not add a tool-supplied URL. If a future feature must fetch external URLs,
+require exact destination allowlists, connection-time validation of resolved
+IPv4/IPv6 addresses, validation at every redirect hop, credential stripping
+across origins, and network-level egress controls. A DNS lookup followed by a
+normal hostname request is vulnerable to DNS rebinding.
 
-## Security Researchers
+## Logs and data handling
 
-Security researchers shall:
+Application error logs use fixed messages and omit tool arguments, query
+strings, database rows, upstream response bodies, credentials, and stack traces.
+The prototype does not produce authenticated or tamper-resistant audit records.
+Do not process PII or sensitive data until retention, access control, and
+approved audit storage are designed and authorized.
 
-- Make every effort to avoid privacy violations, degradation of user experience, disruption to production systems, and destruction or manipulation of data.
-- Only use exploits to the extent necessary to confirm a vulnerability. Do not use an exploit to compromise or exfiltrate data, establish command line access and/or persistence, or use the exploit to "pivot" to other systems. Once you've established that a vulnerability exists, or encountered any of the sensitive data outlined above, you must stop your test and notify us immediately.
-- Keep confidential any information about discovered vulnerabilities for up to 90 calendar days after you have notified GSA. For details, please review Coordinated Disclosure.
+Treat tool arguments, retrieved content, and agent-to-agent messages as
+untrusted. Never place secrets or internal records in issues, logs, receipts,
+evaluation artifacts, or this repository.
 
-## Hackathon note
+## Dependency and release operations
 
-MCP servers built from this template expose their `/mcp` endpoint **without authentication** by default (matching the public-data pilot posture). This is acceptable for a hackathon over public data. Before any non-hackathon use, front the endpoint with authentication and review your agency's ATO requirements. Never commit secrets — keep API keys in environment variables / `.env` (git-ignored), not in source.
+Review Dependabot updates and resolve dependency-audit findings before release.
+For each release candidate, run CI, inspect the generated container and its
+runtime configuration, verify the approved ingress and unauthorized-access
+rejection from the deployment boundary, and record the snapshot/image identity.
+Update data only through the reviewed importer; retain the prior verified
+snapshot and image for rollback.
 
-The starter HTTP helper uses a fixed API origin, rejects absolute or escaping paths,
-disables redirects and environment proxies, and sanitizes upstream failures. Do not
-replace its relative path with a tool-supplied URL. If a tool must fetch arbitrary
-URLs, require exact destination allowlists, connection-time validation of every
-resolved IPv4/IPv6 address, validation at every redirect hop, credential stripping
-across origins, and network-level egress controls. A DNS lookup followed by a normal
-hostname request is vulnerable to DNS rebinding.
+If a credential or sensitive record is exposed, stop the affected service,
+revoke exposed credentials, preserve relevant authorized logs, notify the
+responsible maintainer through a private channel, and follow the agency's
+incident process. Do not test NOAA or other external systems without written
+authorization.
 
-Treat all tool arguments, retrieved content, and agent-to-agent messages as
-untrusted. Do not include upstream response bodies, headers, full URLs, query
-strings, stack traces, credentials, names, SSNs, dates of birth, addresses, or other
-sensitive values in MCP errors or logs. Use structured logs with explicitly
-allowlisted fields and define retention and access controls before processing PII.
+## Vulnerability reporting
+
+Use the repository's private vulnerability reporting feature if it is enabled.
+Otherwise, contact the repository maintainer through an available private
+channel. Do not publish exploit details, credentials, or sensitive findings in
+a public issue.
+
+## Future internal-service requirements
+
+Before any Oracle-backed or internal deployment, separately design and validate
+SSO/token verification, per-user and per-tool data authorization, least-privilege
+Oracle access, input/output guardrails, privacy-reviewed logging, protected
+audit storage, incident response, and agency security authorization. SSO proves
+identity; it does not by itself authorize access to a dataset.

@@ -1,31 +1,36 @@
 # syntax=docker/dockerfile:1
-# Container image for remote (streamable-HTTP) deployment.
-#
-# Used by:
-#   - IBM Code Engine (deploy/ibm/)
-#   - cloud.gov (docker image path) and any other container host
-#
-# The server serves MCP over streamable-HTTP at :8080/mcp with a health check
-# at :8080/health. app.py auto-selects HTTP because PORT is set below.
+# Pinned multi-stage build for the public snapshot container.
 
-FROM python:3.11-slim
+FROM ghcr.io/astral-sh/uv:0.13.9@sha256:d3b601f0c7b118bc1753febf7c41cc80981df678445e0254284eecf84db79a7d AS uv
+
+FROM python:3.11-slim-bookworm@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39 AS builder
+
+WORKDIR /app
+COPY --from=uv /uv /uvx /bin/
+COPY pyproject.toml uv.lock README.md ./
+COPY src ./src
+RUN uv sync --locked --no-dev --no-editable
+
+FROM python:3.11-slim-bookworm@sha256:a83ba18aef0f865b1a4a611c2cf460fe446f2795673bbb9fe43be570439e3b39
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/src
+ENV PATH="/app/.venv/bin:${PATH}"
 ENV PORT=8080
 
 WORKDIR /app
+RUN groupadd --system --gid 10001 fisheries \
+    && useradd --system --uid 10001 --gid fisheries \
+        --no-create-home --shell /usr/sbin/nologin fisheries \
+    && mkdir -p data \
+    && chmod 0755 data
+COPY --from=builder /app/.venv /app/.venv
+COPY --chmod=0444 data/spring.sqlite ./data/spring.sqlite
 
-# Install uv (fast, reproducible installs).
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-
-# Install dependencies first for better layer caching.
-COPY pyproject.toml README.md ./
-COPY src ./src
-RUN uv pip install --system --no-cache .
-
+USER 10001:10001
 EXPOSE 8080
 
-# PORT=8080 (set above) makes app.py run HTTP on that port automatically.
-CMD ["python", "-m", "example_server.app"]
+# PORT selects HTTP, but app startup refuses to bind without an explicit
+# MCP_TRUSTED_HTTP_INGRESS=true operator acknowledgement.
+CMD ["python", "-m", "fisheries_mcp.app"]

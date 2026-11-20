@@ -44,3 +44,21 @@ htmlcov/
 eval/databricks/agent_server/agent.py
 eval/databricks/agent_server/utils.py 
 
+# Historical presentation drafts remain local; release documents are in submission/release.
+/submission/fisheries-deck.pptx
+/submission/fisheries-evaluation.docx
+/submission/candidate-v2-final/
+/submission/candidate-v3/
+/submission/candidate-v4/
+/submission/~$*
+/submission/**/~$*
+/submission/candidate-v5/
+/submission/candidate-v6/
+/submission/candidate-v7-agent-eval/
+/submission/candidate-v7-container-verified/
+/submission/candidate-v7-secure/
+/submission/candidate-v7/fisheries-deck.pptx
+/submission/candidate-v7/fisheries-evaluation.docx
+/submission/candidate-v7-sme-feedback/fisheries-deck.pptx
+/submission/candidate-v7-sme-feedback/fisheries-evaluation.docx
+

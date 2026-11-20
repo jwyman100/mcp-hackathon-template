@@ -1,0 +1,24 @@
+{
+  "recorded_utc": "2026-11-20T20:30:15Z",
+  "environment": "Local WSL Docker daemon",
+  "docker_server_version": "29.8.0",
+  "image_id": "sha256:6d63f4cb78847a00b32180afede061397950fb5c21962a0c3ecda30b9499de47",
+  "server_source_hashes_receipt": "candidate-v7-sme-feedback/demo-receipt.json",
+  "input_sha256": {
+    "Dockerfile": "996a01ab91a5a632887625dcb739228e52477f69ad5ba360e6d6d9094c00f362",
+    "uv.lock": "486257e6b75c71be9facd94b9f754c4953640ebdc4bd07c4dabc301e66b89b3b",
+    "data/spring.sqlite": "8715c420a1ea48f003d0c51457df6c940dc677b4522b9f992ea33c9006893b6d",
+    "submission/container_mcp_smoke.py": "2c3e1dfcddc60ec7e8d5167f29728023420c1b39eec10a1e1daa45d62fe549ce"
+  },
+  "observed": [
+    "The image built successfully with the pinned Dockerfile and locked dependencies.",
+    "The runtime UID was 10001, and default startup failed without trusted-ingress acknowledgement.",
+    "With explicit acknowledgement and loopback port publishing, the container ran with a read-only filesystem, a temporary /tmp, dropped capabilities, and no-new-privileges.",
+    "The health endpoint responded and a host-side MCP client initialized, discovered tools, resolved cod and checked public 2022 and 2023 catch weights."
+  ],
+  "limitations": [
+    "Local Docker verification is not a GitHub Actions run, security audit, production authorization or model-selected agent evaluation.",
+    "The ingress acknowledgement does not authenticate callers.",
+    "The container and image were not published or deployed."
+  ]
+}

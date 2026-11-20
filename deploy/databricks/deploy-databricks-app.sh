@@ -7,8 +7,8 @@
 #   3. `databricks apps deploy` from that path.
 #
 # Databricks builds a container from the synced source + app.yaml, injects
-# DATABRICKS_APP_PORT at runtime, and app.py serves MCP over streamable-HTTP at
-# :$DATABRICKS_APP_PORT/mcp with a health check at /health.
+# DATABRICKS_APP_PORT at runtime. app.yaml explicitly acknowledges the
+# Databricks OAuth ingress before app.py serves streamable-HTTP on that port.
 #
 # Prerequisites:
 #   - Databricks CLI (v0.205+):  https://docs.databricks.com/dev-tools/cli/install.html

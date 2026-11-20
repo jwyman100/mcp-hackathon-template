@@ -143,5 +143,7 @@ ibmcloud cr region-set "${ICR_REGION}"
   written to disk. Rotate/delete when done.
 - **Region pairing:** the ICR region is independent of the Code Engine region;
   set `ICR_REGION` / `ICR_DOMAIN` from `ibmcloud cr region`.
-- **No auth on the endpoint:** public with no auth (pilot posture). Front it with
-  auth for anything beyond a hackathon.
+- **Authentication is not provided by this kit:** Code Engine deployment does
+  not establish an authenticated ingress. The server refuses the platform port
+  by default; do not set `MCP_TRUSTED_HTTP_INGRESS=true` unless an approved
+  authenticated boundary is independently verified.

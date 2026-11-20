@@ -1,189 +1,152 @@
-# GSA MCP Hackathon — Server Template
+# Evidence-aware Fisheries MCP
 
-A ready-to-run starter for building a [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server in Python, plus deployment kits for **IBM Cloud (watsonx Orchestrate)** and **Databricks**.
+A GSA hackathon **Dataset Access Server** prototype that turns a public NOAA
+spring survey snapshot into reproducible, scientifically qualified answers.
+It resolves species names, summarizes expanded catch, aligns comparisons,
+reports sampling coverage, and supplies selected published-survey context
+without requiring an internal database account.
 
-Built with [FastMCP](https://github.com/jlowin/fastmcp) and [uv](https://docs.astral.sh/uv/). If you have never built an MCP server before, start with **[QUICKSTART.md](QUICKSTART.md)**.
+**Scope:** Atlantic cod and haddock, spring 2021-2025. The public archive's
+extraction date is June 25, 2026. This is not a live feed, a full species catalog, an official
+stock assessment, or a publicly deployed service.
 
----
+## Quick start
 
-## What is an MCP server?
+Install [uv](https://docs.astral.sh/uv/), then from the repository root:
 
-An MCP server exposes **tools** (functions the model can call), **prompts** (reusable conversation starters), and **resources** (data the model can read) to an AI client such as Claude Desktop, Claude Code, or an agent platform like watsonx Orchestrate. You write the tools; the client's model decides when to call them.
-
-This template gives you a working server with one example of each, so you can replace the examples with your own service and deploy.
-
----
-
-## Repo structure
-
-```
-mcp-hackathon-template/
-├── README.md                  # This file
-├── QUICKSTART.md              # 5-minute clone → run → connect walkthrough
-├── main.py                    # Local entry point (uv run python main.py)
-├── pyproject.toml             # Package + dependencies (uv)
-├── requirements.txt           # Mirror of runtime deps (for buildpack hosts)
-├── Dockerfile                 # Container image (streamable-HTTP, port 8080)
-├── manifest.yaml              # cloud.gov (Cloud Foundry) deploy
-├── server.json                # MCP registry metadata
-├── .env.example               # Copy to .env for local dev
-├── .github/workflows/ci.yml   # Lint + test on push/PR
-├── docs/                      # Vendor-contributed reference materials
-├── src/
-│   └── example_server/        # ← rename to your service
-│       ├── app.py             # Thin entry point: builds FastMCP, picks transport
-│       ├── config.py          # Settings from env vars / .env
-│       ├── models.py          # Pydantic models & enums for tool params
-│       ├── utils.py           # Shared helpers (HTTP client, pagination)
-│       ├── routes.py          # HTTP-only routes (/health, /version)
-│       ├── tools/             # ONE FILE PER TOOL
-│       │   ├── __init__.py    #   register_tools(mcp) aggregator
-│       │   └── example_tool.py
-│       ├── prompts/
-│       │   ├── __init__.py    #   register_prompts(mcp) aggregator
-│       │   └── example.py
-│       └── resources/
-│           ├── __init__.py    #   register_resources(mcp) aggregator
-│           └── example.py
-├── tests/                     # Import + registration smoke tests
-├── eval/                      # Stub → build a Phoenix eval harness (see mcp-eval skill)
-└── deploy/
-    ├── README.md              # Which deployment kit to use
-    ├── ibm/                   # watsonx Orchestrate: 3 kits (see below)
-    └── databricks/            # Databricks Apps kit
+```powershell
+uv sync --locked --group dev
+uv run fisheries-mcp
 ```
 
----
+The included `data\spring.sqlite` is a compact public-only snapshot. To regenerate
+it from the checksum-pinned official archive:
 
-## Getting started
-
-### Prerequisites
-- [uv](https://docs.astral.sh/uv/) — `pip install uv` or `brew install uv`
-
-### Install and run
-
-```bash
-cp .env.example .env
-uv sync
-uv run python main.py
+```powershell
+uv run fisheries-prepare --download
 ```
 
-The server starts in **stdio** mode — it talks JSON-RPC over stdin/stdout, which is how local clients (Claude Desktop, Claude Code) launch it. See [QUICKSTART.md](QUICKSTART.md) to connect a client.
+The first command above starts a **stdio MCP server**, not a chat interface. Add
+it to an MCP-capable client using [QUICKSTART.md](QUICKSTART.md). Runtime queries
+are offline and read-only. Missing/incompatible data causes an explicit error;
+there is no fallback to synthetic data or an internal server.
 
-### Verify
+For a reproducible demonstration without a model:
 
-```bash
-uv sync --group dev
-uv run pytest tests/ -v      # tests
-uv run ruff check .          # lint
+```powershell
+uv run python submission\demo.py
 ```
 
----
+This script calls the real MCP server over stdio; its calls are scripted, not
+selected by an agent. If the Windows virtual environment is already installed
+but `uv` is not on PATH, run `.\.venv\Scripts\python.exe submission\demo.py`.
 
-## The one-tool-per-file pattern
+## What makes it useful
 
-Each tool lives in its own file under `src/example_server/tools/` and exposes a `register(mcp)` function. `tools/__init__.py` calls each one from a single `register_tools(mcp)`. This keeps the tool list scannable and lets you add or remove an integration by touching two files.
+Ask: **"Compare Atlantic cod and haddock spring catch for 2021-2025. Check coverage
+before interpreting the difference."**
 
-**Step 1 — create `src/example_server/tools/my_tool.py`:**
+The server provides the same years and strata for both species, annual catch
+completeness, station/cruise/stratum counts, public provenance, and interpretation
+limits. It rejects aliases of the same species as a two-species comparison.
 
-```python
-from typing import Annotated
-from urllib.parse import quote
-from fastmcp import FastMCP
+| Tool | Goal |
+| --- | --- |
+| `search_species` | Find published common/scientific names in this snapshot |
+| `get_spring_catch_summary` | Retrieve one species' catch and sampling context |
+| `compare_spring_catch` | Compare distinct species with identical scope |
+| `get_spring_survey_coverage` | Inspect station coverage independently of catch |
+| `get_spring_report_context` | Read a curated, cited NOAA context card for 2023 or 2025 |
 
-from example_server.utils import fetch_json
+The catch tools accept exact common names, scientific names, and published labels
+returned by search. Every tool has a typed `request` object. Survey years default
+to 2021-2025 and strata to `00000`-`99999` (all snapshot strata). The report cards are manually curated and limited to the two named years; their
+source-check date is distinct from scientific approval, and their review status
+is `not_reviewed`. They do not fetch or search current reports. Report figures
+are separate from snapshot records. The resource `fisheries://dictionary`
+explains source fields and provenance; the `responsible_comparison` prompt
+provides a reproducible starting question. There is no arbitrary SQL tool.
 
+## Scientific limits are part of the result
 
-def register(mcp: FastMCP) -> None:
-    @mcp.tool(
-        name="example_get_thing",
-        annotations={
-            "title": "Get a thing",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
-    )
-    async def get_thing(thing_id: Annotated[str, "The ID to fetch."]) -> dict:
-        """One-line summary. Document the data source, its update cadence,
-        and the return shape here — the model reads this docstring."""
-        safe_id = quote(thing_id, safe="")
-        return await fetch_json(f"things/{safe_id}")
+- Expanded catch totals are **not population abundance indices**. No area
+  weighting, vessel calibration, effort standardization, or haul/gear validity
+  filtering is applied.
+- No catch record means unknown, not measured zero. Unknown measurements make
+  that annual total null; known subtotals are labeled separately.
+- `EXPCATCHNUM` is an expanded number of individuals and can be fractional.
+- The linked public field metadata does **not specify the unit of EXPCATCHWT**.
+  Responses say "source units"; this does not prove which units are excluded.
+- Coverage counts station records. A matched year means complete catch
+  measurements for the requested species, not equal effort between years.
+- No selected station records do not prove that no survey effort occurred;
+  counts of strata do not measure the geographic area covered.
+- Out-of-snapshot years are rejected rather than presented as missing data.
+
+## Evidence and deliverables
+
+Start with the [claim-to-artifact map](submission/README.md#rubric-evidence),
+[presentation](submission/release/fisheries-deck.pptx) and
+[evaluation document](submission/release/fisheries-evaluation.docx).
+The [step-by-step Databricks runbook](deploy/databricks/README.md#step-by-step-current-hardened-source-run)
+prepares the current-runtime agent rerun and optional no-tool comparison;
+these new experiments have not yet been executed.
+
+[Evaluation documentation](eval/README.md) explains independent raw-CSV
+reconciliation, synthetic edge-case tests, the 12-question benchmark, results,
+and limitations. [Historical scripted results](eval/results/scripted.json) and
+the [post-review scripted run](eval/results/candidate-v3-judged.json) and
+[candidate-v7 scripted run](eval/results/candidate-v7-scripted.json), plus the
+[hardened-runtime scripted run](eval/results/candidate-v7-hardened-scripted.json),
+distinguish transport/tool correctness from model-selected tool use.
+The hardened-runtime run passed 36/36 scripted checks against the public CSV
+reference; it is not an agent score.
+The [public evidence appendix](submission/public-evaluation-appendix.md) records
+numerical agreement alongside recovered tool errors, unsupported model claims,
+and an evaluator citation error. The historical 33-trial set remains separate
+from the candidate-v7 agent run. The sanitized
+[candidate-v7 run manifest](eval/results/candidate-v7-agent-evaluation.json)
+records 45 model-selected trials across 15 questions: all completed, 82 of 84
+MCP calls succeeded, and the two malformed calls recovered. Reviewed numerical
+tool outputs agreed with supplied references in the requested cases, while
+answer-level interpretation errors remain. All trial scientific-review statuses
+are `UNVERIFIED`. Later, limited subject-matter input addressed one historical
+NOAA-D01:2 excerpt and identified a need to examine spatial sampling; it did
+not approve the answer. No independent CSV reprocessing of this bundle, full
+scientific review, perfect score, or controlled before/after result is claimed.
+
+```powershell
+uv run pytest tests -q
+uv run ruff check .
+uv run ruff format --check .
 ```
 
-**Step 2 — wire it up in `tools/__init__.py`:**
+The [submission guide](submission/README.md) contains the demo narrative,
+rubric-to-evidence mapping, deck/document generation, and remaining release
+gates. The [provisional schema contract](submission/schema-contract.md) explains
+the proposed scientist-review lifecycle; the demo's optional JSON receipt
+records reproducible public tool calls and can be replayed locally. Neither is
+scientific approval. The optional [Databricks experiment](deploy/databricks/README.md) is not
+required to reproduce the local server and has not been deployed.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the code-path map, scientific
+invariants, evidence lifecycle and clean-checkout validation steps.
 
-```python
-from example_server.tools import example_tool, my_tool
+## Structure
 
-def register_tools(mcp) -> None:
-    example_tool.register(mcp)
-    my_tool.register(mcp)  # ← add this line
-```
+`src\fisheries_mcp` contains the thin app, models, read-only data layer, public
+importer, and one file per tool. `tests` uses invented records, not restricted
+data. `eval` computes reference answers independently of application queries.
+`data` contains only the selected official public extract.
 
-**Step 3 — add any API key** as a typed field in `config.py` and document the env var in `.env.example`.
+## Source and attribution
 
-Prompts (`prompts/`) and resources (`resources/`) follow the exact same `register(mcp)` + aggregator pattern.
+- [NOAA Spring Bottom Trawl Survey metadata and downloads](https://www.fisheries.noaa.gov/inport/item/22561)
+- [Catch field metadata](https://www.fisheries.noaa.gov/inport/item/33608)
+- [Station field metadata](https://www.fisheries.noaa.gov/inport/item/33610)
 
----
-
-## Rename the package
-
-Before publishing your server, rename `example_server` to your service (e.g. `census_mcp`):
-
-1. Rename the folder `src/example_server/` → `src/<your_name>/`.
-2. Update `pyproject.toml`: the `[project].name`, `[project.scripts]`, and `[tool.hatch.build.targets.wheel].packages`.
-3. Find-and-replace `example_server` across `src/`, `tests/`, `main.py`, `Dockerfile`, and `manifest.yaml`.
-
----
-
-## Tool design tips (federal data)
-
-- **Return structured data, not prose.** Return dicts/lists with consistent keys and let the model narrate.
-- **Document freshness.** Federal datasets lag; state the update frequency and "as-of" date in the docstring.
-- **Expose pagination.** Use `PaginationParams` / `paginate()` from `utils.py`, and return `has_more` / `next_offset`.
-- **Use explicit timeouts.** `utils.fetch_json` defaults to 30s.
-- **Actionable errors.** Return an error dict with a `hint`, not a raw stack trace.
-- **Constrain outbound requests.** Keep API origins in operator-controlled code or configuration, pass only validated relative paths to `fetch_json`, and encode path segments. Never pass a tool-supplied URL directly to an HTTP client.
-- **Treat redirects and DNS as security boundaries.** Redirects are disabled by default. A server that must fetch caller-supplied URLs needs connection-time IP validation on every hop plus network egress controls; a one-time DNS check is not sufficient.
-- **Keep sensitive data out of errors and logs.** Do not expose or log upstream bodies, headers, full URLs, query strings, credentials, stack traces, SSNs, dates of birth, or addresses.
-
----
-
-## Deploying
-
-Local development uses stdio. To share your server with an agent platform, deploy it and register it. See **[deploy/README.md](deploy/README.md)** for a chooser, then:
-
-- **IBM watsonx Orchestrate** — [deploy/ibm/](deploy/ibm/) (three kits: local stdio toolkit, Code Engine build-from-Git, and prebuilt image).
-- **Databricks Apps** — [deploy/databricks/](deploy/databricks/).
-
-Both read the same server code; `app.py` automatically serves HTTP when the platform injects a port.
-
----
-
-## Partner reference materials
-
-The [`docs/`](docs/) directory contains educational reference materials that
-IBM and Databricks may contribute for hackathon participants. Vendor-contributed
-materials do not represent the views, positions, or policies of GSA or the
-United States Government.
-
-GSA does not endorse any commercial product, service, or enterprise referenced
-in these materials. Reference to a commercial product, service, or enterprise
-does not constitute or imply endorsement, recommendation, or favoring by GSA or
-the United States Government. These materials are provided for educational
-purposes only. See [`docs/README.md`](docs/README.md) for the complete notice and
-contribution guidance.
-
----
-
-## Evaluations
-
-Measuring how well an LLM can use your tools is the real test of server quality. This template intentionally does **not** ship an eval harness — see [eval/README.md](eval/README.md) for how to build one with the `mcp-eval` skill.
-
----
-
-## License
-
-[MIT](LICENSE). See [SECURITY.md](SECURITY.md) for the vulnerability disclosure policy and hackathon security notes.
+Read the source metadata and use constraints before making inferences.
+Acknowledgement: NOAA/NMFS/NEFSC. This independently implemented prototype is not
+official NOAA or Department of Commerce communication or endorsement. It uses
+only the published extract, not internal survey data or an internal MCP endpoint.
+Code is provided under the inherited [MIT license](LICENSE); see
+[SECURITY.md](SECURITY.md) for reporting and deployment boundaries.

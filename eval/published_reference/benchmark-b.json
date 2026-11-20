@@ -1,0 +1,43 @@
+[
+  {
+    "id": "NOAA-B01",
+    "split": "published_context",
+    "source_concept": "Interpret annual cod catch and coverage using published context about the disrupted 2023 spring survey.",
+    "question": "NOAA's 2023 Northeast Spring Bottom Trawl Survey Summary documents ship repair/maintenance delays that reduced sea days by about 75%, a crew shortage that reduced operations from 24 to 12 hours daily, prioritization of Georges Bank, and daytime-only sampling. It reports 70 of 377 planned trawl stations sampled and says combining the daytime observations with previous day/night observations requires additional evaluation. Source: https://www.fisheries.noaa.gov/new-england-mid-atlantic/ecosystems/2023-northeast-spring-bottom-trawl-survey-summary. Using the public fisheries MCP tools, retrieve Atlantic cod expanded catch weight and number, station-record counts, and sampled-stratum counts for 2022-2024 across all snapshot strata. Explain how the documented disruption affects interpretation of the 2023 catch compared with adjacent years. Does a change in total catch establish a population trend? Distinguish the report's sampled trawl stations from the tool's station records; do not invent a reconciliation between those counts.",
+    "tool": "get_spring_catch_summary",
+    "request": {
+      "species_name": "Atlantic cod",
+      "start_year": 2022,
+      "end_year": 2024
+    },
+    "check": "summary",
+    "rubric": [
+      "Retrieves 2022-2024 cod catch and coverage through successful public MCP calls with all snapshot strata; redundant coverage calls are not automatically failures.",
+      "Reports the independent annual catch weights, numbers, station counts and sampled-stratum counts accurately.",
+      "Uses the supplied NOAA source for repair/maintenance delays, reduced operating hours, Georges Bank focus and daytime-only sampling; does not claim these causes were discovered in MCP records.",
+      "Explains that changed geographic coverage and sampling conditions prevent a direct population-trend inference from these catch totals; additional evaluation is required before combining daytime and day/night observations.",
+      "Keeps the report's 70 sampled trawl stations distinct from 77 snapshot station records in 2023; does not assume the difference is seven invalid or non-representative hauls.",
+      "Cites the public data source and NOAA summary; preserves unspecified weight units rather than labeling the totals as kg."
+    ],
+    "reference_answer": "The public snapshot returns cod expanded weight/number and station-record/stratum counts of 609.780/584 and 378/82 for 2022; 416.396/284 and 77/13 for 2023; and 486.661/323 and 388/82 for 2024. Weight is in unspecified source units. The supplied NOAA summary attributes the 2023 restriction to maintenance delays and staffing shortages, with Georges Bank prioritized and only daytime sampling. Catch totals therefore reflect different geographic coverage and sampling conditions and do not alone establish population decline or recovery. NOAA says combining daytime-only data with prior day/night data needs additional evaluation. The report's 70 sampled trawl stations and the MCP's 77 station records are different reported measures; these tools do not establish why the counts differ.",
+    "expected_facts": [
+      "2022: cod expanded weight 609.780, number 584, station records 378, sampled strata 82.",
+      "2023: cod expanded weight 416.396, number 284, station records 77, sampled strata 13.",
+      "2024: cod expanded weight 486.661, number 323, station records 388, sampled strata 82.",
+      "Weight units remain unspecified; these are unweighted selected-record totals, not official abundance indices.",
+      "NOAA documents about 75% fewer sea days, operations reduced to 12 hours/day, Georges Bank focus, and daytime-only sampling.",
+      "A difference of seven between report and snapshot counts does not identify seven invalid hauls.",
+      "Source facts were supplied in the question; this evaluates evidence-informed interpretation, not autonomous report retrieval."
+    ],
+    "source": {
+      "title": "2023 Northeast Spring Bottom Trawl Survey Summary",
+      "url": "https://www.fisheries.noaa.gov/new-england-mid-atlantic/ecosystems/2023-northeast-spring-bottom-trawl-survey-summary",
+      "accessed_on": "2026-11-19",
+      "reference_scope": "Opening operational-summary paragraphs, including the 70/377 station count and daytime comparability warning.",
+      "supporting_report": "https://repository.library.noaa.gov/view/noaa/50892",
+      "supporting_report_sha256": "c0a6306a64e05f0deca0d112728b9b4d24c27374c63a4d7b9a08e22ff658da9e",
+      "limitations": "The webpage is a versionable public source, not a claim that MCP tools expose operational history. The pinned supporting PDF is separate evidence; no webpage byte-identity claim is made."
+    },
+    "source_archive_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd"
+  }
+]

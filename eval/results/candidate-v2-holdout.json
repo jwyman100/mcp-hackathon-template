@@ -1,0 +1,993 @@
+{
+  "evaluation_type": "scripted_stdio_mcp_integration_not_agent",
+  "run_utc": "2026-11-18T19:38:38.038826+00:00",
+  "environment": {
+    "os": "Windows",
+    "architecture": "AMD64",
+    "python": "3.11.18",
+    "fastmcp": "2.14.7"
+  },
+  "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+  "suite_version": "2.0.0",
+  "split": "holdout",
+  "selected_case_ids": [
+    "Q04",
+    "Q06",
+    "Q11",
+    "Q12"
+  ],
+  "questions_sha256": "cc34290165e9728c14186004098779cfce652325cbfb09c415ee1540b68000aa",
+  "reference_method": "independent raw CSV filtering and Decimal aggregation",
+  "comparison_tolerance": {
+    "relative": 1e-10,
+    "absolute": 1e-08
+  },
+  "trial_count": 12,
+  "passed": 12,
+  "startup_seconds": 2.0682941999984905,
+  "mcp_round_trip_latency_ms": {
+    "p50": 24.65584999845305,
+    "p95_nearest_rank": 38.659799996821675,
+    "includes": "Warm stdio MCP round trip; not LLM or database-only latency"
+  },
+  "trial_latency_ms": {
+    "p50": 33.765850001145736,
+    "p95_nearest_rank": 50.84059999717283,
+    "includes": "MCP call, schema validation, and independent reference check"
+  },
+  "agent_evaluation": {
+    "status": "not_run",
+    "reason": "No approved benchmark model/runtime has been configured.",
+    "task_success_rate": null,
+    "tool_selection_accuracy": null,
+    "scientific_claim_accuracy": null
+  },
+  "databricks": {
+    "status": "not_run",
+    "reason": "Account/sandbox/cost gates pending."
+  },
+  "trials": [
+    {
+      "id": "Q04",
+      "repeat": 1,
+      "passed": true,
+      "latency_ms": 50.84059999717283,
+      "call_latency_ms": 38.659799996821675,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Gadus morhua",
+        "start_year": 2022,
+        "end_year": 2024
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "scope": {
+          "start_year": 2022,
+          "end_year": 2024,
+          "minimum_stratum": "00000",
+          "maximum_stratum": "99999"
+        },
+        "annual_coverage": [
+          {
+            "year": 2022,
+            "station_records": 378,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2023,
+            "station_records": 77,
+            "cruises": 1,
+            "sampled_strata": 13,
+            "status": "observed"
+          },
+          {
+            "year": 2024,
+            "station_records": 388,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          }
+        ],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "interpretation": [
+          "These are published expanded catch totals, not population abundance estimates.",
+          "Coverage counts station records, not effort-standardized or valid-haul counts.",
+          "No haul/gear validity, stratum-area weighting, or vessel calibration is applied.",
+          "Missing catch rows are unknown, not observed zero; absent species rows do not establish zero-catch tows.",
+          "If any measurement is unknown, its annual total is null; known subtotals are reported separately.",
+          "EXPCATCHWT units are unspecified in the linked public metadata; do not label weights as kg without an authoritative unit reference.",
+          "The fixed public snapshot is not live or a complete species catalog."
+        ],
+        "series": {
+          "species": {
+            "code": "073",
+            "common_name": "Atlantic cod",
+            "scientific_name": "Gadus morhua",
+            "published_label": "Gadus morhua (Atlantic cod)"
+          },
+          "annual_catch": [
+            {
+              "year": 2022,
+              "catch_records": 65,
+              "total_expanded_weight": 609.78,
+              "total_expanded_number": 584.0,
+              "known_expanded_weight": 609.78,
+              "known_expanded_number": 584.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2023,
+              "catch_records": 24,
+              "total_expanded_weight": 416.396,
+              "total_expanded_number": 284.0,
+              "known_expanded_weight": 416.396,
+              "known_expanded_number": 284.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2024,
+              "catch_records": 56,
+              "total_expanded_weight": 486.661,
+              "total_expanded_number": 323.0,
+              "known_expanded_weight": 486.661,
+              "known_expanded_number": 323.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Q06",
+      "repeat": 1,
+      "passed": true,
+      "latency_ms": 26.828199999727076,
+      "call_latency_ms": 21.18049999990035,
+      "tool": "search_species",
+      "request": {
+        "term": "salmon"
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "species": [],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "note": "Only species in this snapshot are searched. No match does not mean a species is absent from the full survey."
+      }
+    },
+    {
+      "id": "Q11",
+      "repeat": 1,
+      "passed": true,
+      "latency_ms": 2.953800001705531,
+      "call_latency_ms": 2.947700002550846,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Atlantic cod",
+        "start_year": 2026,
+        "end_year": 2026
+      },
+      "expected_error": true,
+      "error": "2 validation errors for call[get_spring_catch_summary]\nrequest.start_year\n  Input should be less than or equal to 2025 [type=less_than_equal, input_value=2026, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.13/v/less_than_equal\nrequest.end_year\n  Input should be less than or equal to 2025 [type=less_than_equal, input_value=2026, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.13/v/less_than_equal",
+      "result": null
+    },
+    {
+      "id": "Q12",
+      "repeat": 1,
+      "passed": true,
+      "latency_ms": 46.24779999721795,
+      "call_latency_ms": 32.10340000077849,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Atlantic cod"
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "scope": {
+          "start_year": 2021,
+          "end_year": 2025,
+          "minimum_stratum": "00000",
+          "maximum_stratum": "99999"
+        },
+        "annual_coverage": [
+          {
+            "year": 2021,
+            "station_records": 332,
+            "cruises": 1,
+            "sampled_strata": 71,
+            "status": "observed"
+          },
+          {
+            "year": 2022,
+            "station_records": 378,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2023,
+            "station_records": 77,
+            "cruises": 1,
+            "sampled_strata": 13,
+            "status": "observed"
+          },
+          {
+            "year": 2024,
+            "station_records": 388,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2025,
+            "station_records": 395,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          }
+        ],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "interpretation": [
+          "These are published expanded catch totals, not population abundance estimates.",
+          "Coverage counts station records, not effort-standardized or valid-haul counts.",
+          "No haul/gear validity, stratum-area weighting, or vessel calibration is applied.",
+          "Missing catch rows are unknown, not observed zero; absent species rows do not establish zero-catch tows.",
+          "If any measurement is unknown, its annual total is null; known subtotals are reported separately.",
+          "EXPCATCHWT units are unspecified in the linked public metadata; do not label weights as kg without an authoritative unit reference.",
+          "The fixed public snapshot is not live or a complete species catalog."
+        ],
+        "series": {
+          "species": {
+            "code": "073",
+            "common_name": "Atlantic cod",
+            "scientific_name": "Gadus morhua",
+            "published_label": "Gadus morhua (Atlantic cod)"
+          },
+          "annual_catch": [
+            {
+              "year": 2021,
+              "catch_records": 65,
+              "total_expanded_weight": 430.62600000000003,
+              "total_expanded_number": 547.0,
+              "known_expanded_weight": 430.62600000000003,
+              "known_expanded_number": 547.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2022,
+              "catch_records": 65,
+              "total_expanded_weight": 609.78,
+              "total_expanded_number": 584.0,
+              "known_expanded_weight": 609.78,
+              "known_expanded_number": 584.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2023,
+              "catch_records": 24,
+              "total_expanded_weight": 416.396,
+              "total_expanded_number": 284.0,
+              "known_expanded_weight": 416.396,
+              "known_expanded_number": 284.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2024,
+              "catch_records": 56,
+              "total_expanded_weight": 486.661,
+              "total_expanded_number": 323.0,
+              "known_expanded_weight": 486.661,
+              "known_expanded_number": 323.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2025,
+              "catch_records": 54,
+              "total_expanded_weight": 404.15000000000003,
+              "total_expanded_number": 367.0,
+              "known_expanded_weight": 404.15000000000003,
+              "known_expanded_number": 367.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Q04",
+      "repeat": 2,
+      "passed": true,
+      "latency_ms": 40.7035000025644,
+      "call_latency_ms": 29.32399999917834,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Gadus morhua",
+        "start_year": 2022,
+        "end_year": 2024
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "scope": {
+          "start_year": 2022,
+          "end_year": 2024,
+          "minimum_stratum": "00000",
+          "maximum_stratum": "99999"
+        },
+        "annual_coverage": [
+          {
+            "year": 2022,
+            "station_records": 378,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2023,
+            "station_records": 77,
+            "cruises": 1,
+            "sampled_strata": 13,
+            "status": "observed"
+          },
+          {
+            "year": 2024,
+            "station_records": 388,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          }
+        ],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "interpretation": [
+          "These are published expanded catch totals, not population abundance estimates.",
+          "Coverage counts station records, not effort-standardized or valid-haul counts.",
+          "No haul/gear validity, stratum-area weighting, or vessel calibration is applied.",
+          "Missing catch rows are unknown, not observed zero; absent species rows do not establish zero-catch tows.",
+          "If any measurement is unknown, its annual total is null; known subtotals are reported separately.",
+          "EXPCATCHWT units are unspecified in the linked public metadata; do not label weights as kg without an authoritative unit reference.",
+          "The fixed public snapshot is not live or a complete species catalog."
+        ],
+        "series": {
+          "species": {
+            "code": "073",
+            "common_name": "Atlantic cod",
+            "scientific_name": "Gadus morhua",
+            "published_label": "Gadus morhua (Atlantic cod)"
+          },
+          "annual_catch": [
+            {
+              "year": 2022,
+              "catch_records": 65,
+              "total_expanded_weight": 609.78,
+              "total_expanded_number": 584.0,
+              "known_expanded_weight": 609.78,
+              "known_expanded_number": 584.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2023,
+              "catch_records": 24,
+              "total_expanded_weight": 416.396,
+              "total_expanded_number": 284.0,
+              "known_expanded_weight": 416.396,
+              "known_expanded_number": 284.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2024,
+              "catch_records": 56,
+              "total_expanded_weight": 486.661,
+              "total_expanded_number": 323.0,
+              "known_expanded_weight": 486.661,
+              "known_expanded_number": 323.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Q06",
+      "repeat": 2,
+      "passed": true,
+      "latency_ms": 22.7937000017846,
+      "call_latency_ms": 16.49340000221855,
+      "tool": "search_species",
+      "request": {
+        "term": "salmon"
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "species": [],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "note": "Only species in this snapshot are searched. No match does not mean a species is absent from the full survey."
+      }
+    },
+    {
+      "id": "Q11",
+      "repeat": 2,
+      "passed": true,
+      "latency_ms": 2.176100002543535,
+      "call_latency_ms": 2.1725000005972106,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Atlantic cod",
+        "start_year": 2026,
+        "end_year": 2026
+      },
+      "expected_error": true,
+      "error": "2 validation errors for call[get_spring_catch_summary]\nrequest.start_year\n  Input should be less than or equal to 2025 [type=less_than_equal, input_value=2026, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.13/v/less_than_equal\nrequest.end_year\n  Input should be less than or equal to 2025 [type=less_than_equal, input_value=2026, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.13/v/less_than_equal",
+      "result": null
+    },
+    {
+      "id": "Q12",
+      "repeat": 2,
+      "passed": true,
+      "latency_ms": 46.41310000079102,
+      "call_latency_ms": 31.001899998955196,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Atlantic cod"
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "scope": {
+          "start_year": 2021,
+          "end_year": 2025,
+          "minimum_stratum": "00000",
+          "maximum_stratum": "99999"
+        },
+        "annual_coverage": [
+          {
+            "year": 2021,
+            "station_records": 332,
+            "cruises": 1,
+            "sampled_strata": 71,
+            "status": "observed"
+          },
+          {
+            "year": 2022,
+            "station_records": 378,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2023,
+            "station_records": 77,
+            "cruises": 1,
+            "sampled_strata": 13,
+            "status": "observed"
+          },
+          {
+            "year": 2024,
+            "station_records": 388,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2025,
+            "station_records": 395,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          }
+        ],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "interpretation": [
+          "These are published expanded catch totals, not population abundance estimates.",
+          "Coverage counts station records, not effort-standardized or valid-haul counts.",
+          "No haul/gear validity, stratum-area weighting, or vessel calibration is applied.",
+          "Missing catch rows are unknown, not observed zero; absent species rows do not establish zero-catch tows.",
+          "If any measurement is unknown, its annual total is null; known subtotals are reported separately.",
+          "EXPCATCHWT units are unspecified in the linked public metadata; do not label weights as kg without an authoritative unit reference.",
+          "The fixed public snapshot is not live or a complete species catalog."
+        ],
+        "series": {
+          "species": {
+            "code": "073",
+            "common_name": "Atlantic cod",
+            "scientific_name": "Gadus morhua",
+            "published_label": "Gadus morhua (Atlantic cod)"
+          },
+          "annual_catch": [
+            {
+              "year": 2021,
+              "catch_records": 65,
+              "total_expanded_weight": 430.62600000000003,
+              "total_expanded_number": 547.0,
+              "known_expanded_weight": 430.62600000000003,
+              "known_expanded_number": 547.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2022,
+              "catch_records": 65,
+              "total_expanded_weight": 609.78,
+              "total_expanded_number": 584.0,
+              "known_expanded_weight": 609.78,
+              "known_expanded_number": 584.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2023,
+              "catch_records": 24,
+              "total_expanded_weight": 416.396,
+              "total_expanded_number": 284.0,
+              "known_expanded_weight": 416.396,
+              "known_expanded_number": 284.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2024,
+              "catch_records": 56,
+              "total_expanded_weight": 486.661,
+              "total_expanded_number": 323.0,
+              "known_expanded_weight": 486.661,
+              "known_expanded_number": 323.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2025,
+              "catch_records": 54,
+              "total_expanded_weight": 404.15000000000003,
+              "total_expanded_number": 367.0,
+              "known_expanded_weight": 404.15000000000003,
+              "known_expanded_number": 367.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Q04",
+      "repeat": 3,
+      "passed": true,
+      "latency_ms": 44.060100000933744,
+      "call_latency_ms": 29.115100001945393,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Gadus morhua",
+        "start_year": 2022,
+        "end_year": 2024
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "scope": {
+          "start_year": 2022,
+          "end_year": 2024,
+          "minimum_stratum": "00000",
+          "maximum_stratum": "99999"
+        },
+        "annual_coverage": [
+          {
+            "year": 2022,
+            "station_records": 378,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2023,
+            "station_records": 77,
+            "cruises": 1,
+            "sampled_strata": 13,
+            "status": "observed"
+          },
+          {
+            "year": 2024,
+            "station_records": 388,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          }
+        ],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "interpretation": [
+          "These are published expanded catch totals, not population abundance estimates.",
+          "Coverage counts station records, not effort-standardized or valid-haul counts.",
+          "No haul/gear validity, stratum-area weighting, or vessel calibration is applied.",
+          "Missing catch rows are unknown, not observed zero; absent species rows do not establish zero-catch tows.",
+          "If any measurement is unknown, its annual total is null; known subtotals are reported separately.",
+          "EXPCATCHWT units are unspecified in the linked public metadata; do not label weights as kg without an authoritative unit reference.",
+          "The fixed public snapshot is not live or a complete species catalog."
+        ],
+        "series": {
+          "species": {
+            "code": "073",
+            "common_name": "Atlantic cod",
+            "scientific_name": "Gadus morhua",
+            "published_label": "Gadus morhua (Atlantic cod)"
+          },
+          "annual_catch": [
+            {
+              "year": 2022,
+              "catch_records": 65,
+              "total_expanded_weight": 609.78,
+              "total_expanded_number": 584.0,
+              "known_expanded_weight": 609.78,
+              "known_expanded_number": 584.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2023,
+              "catch_records": 24,
+              "total_expanded_weight": 416.396,
+              "total_expanded_number": 284.0,
+              "known_expanded_weight": 416.396,
+              "known_expanded_number": 284.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2024,
+              "catch_records": 56,
+              "total_expanded_weight": 486.661,
+              "total_expanded_number": 323.0,
+              "known_expanded_weight": 486.661,
+              "known_expanded_number": 323.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "Q06",
+      "repeat": 3,
+      "passed": true,
+      "latency_ms": 19.395899998926325,
+      "call_latency_ms": 13.042299997323425,
+      "tool": "search_species",
+      "request": {
+        "term": "salmon"
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "species": [],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "note": "Only species in this snapshot are searched. No match does not mean a species is absent from the full survey."
+      }
+    },
+    {
+      "id": "Q11",
+      "repeat": 3,
+      "passed": true,
+      "latency_ms": 3.0134999979054555,
+      "call_latency_ms": 3.0086999977356754,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Atlantic cod",
+        "start_year": 2026,
+        "end_year": 2026
+      },
+      "expected_error": true,
+      "error": "2 validation errors for call[get_spring_catch_summary]\nrequest.start_year\n  Input should be less than or equal to 2025 [type=less_than_equal, input_value=2026, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.13/v/less_than_equal\nrequest.end_year\n  Input should be less than or equal to 2025 [type=less_than_equal, input_value=2026, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.13/v/less_than_equal",
+      "result": null
+    },
+    {
+      "id": "Q12",
+      "repeat": 3,
+      "passed": true,
+      "latency_ms": 43.106599998282036,
+      "call_latency_ms": 28.13119999700575,
+      "tool": "get_spring_catch_summary",
+      "request": {
+        "species_name": "Atlantic cod"
+      },
+      "expected_error": false,
+      "error": null,
+      "result": {
+        "scope": {
+          "start_year": 2021,
+          "end_year": 2025,
+          "minimum_stratum": "00000",
+          "maximum_stratum": "99999"
+        },
+        "annual_coverage": [
+          {
+            "year": 2021,
+            "station_records": 332,
+            "cruises": 1,
+            "sampled_strata": 71,
+            "status": "observed"
+          },
+          {
+            "year": 2022,
+            "station_records": 378,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2023,
+            "station_records": 77,
+            "cruises": 1,
+            "sampled_strata": 13,
+            "status": "observed"
+          },
+          {
+            "year": 2024,
+            "station_records": 388,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          },
+          {
+            "year": 2025,
+            "station_records": 395,
+            "cruises": 1,
+            "sampled_strata": 82,
+            "status": "observed"
+          }
+        ],
+        "provenance": {
+          "dataset_kind": "public",
+          "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+          "source_url": "https://storage.googleapis.com/nmfs_odp_nefsc/PARR/PEMAD/ESB/22561/22561_NEFSCSpringFisheriesIndependentBottomTrawlData.zip",
+          "metadata_url": "https://www.fisheries.noaa.gov/inport/item/22561",
+          "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+          "extracted_on": "2026-06-25",
+          "schema_version": 1,
+          "start_year": 2021,
+          "end_year": 2025,
+          "species_codes": [
+            "073",
+            "074"
+          ],
+          "weight_unit": "source units; unspecified in linked public metadata",
+          "selection": "SPRING; PURPOSE_CODE=10; cruise/station/catch STATUS_CODE=10; years 2021-2025; all published station strata; catch SVSPP 073 and 074; no haul/gear validity filtering"
+        },
+        "interpretation": [
+          "These are published expanded catch totals, not population abundance estimates.",
+          "Coverage counts station records, not effort-standardized or valid-haul counts.",
+          "No haul/gear validity, stratum-area weighting, or vessel calibration is applied.",
+          "Missing catch rows are unknown, not observed zero; absent species rows do not establish zero-catch tows.",
+          "If any measurement is unknown, its annual total is null; known subtotals are reported separately.",
+          "EXPCATCHWT units are unspecified in the linked public metadata; do not label weights as kg without an authoritative unit reference.",
+          "The fixed public snapshot is not live or a complete species catalog."
+        ],
+        "series": {
+          "species": {
+            "code": "073",
+            "common_name": "Atlantic cod",
+            "scientific_name": "Gadus morhua",
+            "published_label": "Gadus morhua (Atlantic cod)"
+          },
+          "annual_catch": [
+            {
+              "year": 2021,
+              "catch_records": 65,
+              "total_expanded_weight": 430.62600000000003,
+              "total_expanded_number": 547.0,
+              "known_expanded_weight": 430.62600000000003,
+              "known_expanded_number": 547.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2022,
+              "catch_records": 65,
+              "total_expanded_weight": 609.78,
+              "total_expanded_number": 584.0,
+              "known_expanded_weight": 609.78,
+              "known_expanded_number": 584.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2023,
+              "catch_records": 24,
+              "total_expanded_weight": 416.396,
+              "total_expanded_number": 284.0,
+              "known_expanded_weight": 416.396,
+              "known_expanded_number": 284.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2024,
+              "catch_records": 56,
+              "total_expanded_weight": 486.661,
+              "total_expanded_number": 323.0,
+              "known_expanded_weight": 486.661,
+              "known_expanded_number": 323.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            },
+            {
+              "year": 2025,
+              "catch_records": 54,
+              "total_expanded_weight": 404.15000000000003,
+              "total_expanded_number": 367.0,
+              "known_expanded_weight": 404.15000000000003,
+              "known_expanded_number": 367.0,
+              "unknown_weight_records": 0,
+              "unknown_number_records": 0,
+              "status": "observed"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -16,13 +16,14 @@
 #   DATABRICKS_CLIENT_SECRET OAuth secret
 #
 # The `command` runs the server from the synced source. We put the package's
-# src/ on PYTHONPATH and launch it as a module; app.py sees DATABRICKS_APP_PORT
-# and automatically serves streamable-HTTP on that port with /mcp and /health.
+# src/ on PYTHONPATH and explicitly acknowledge the Databricks OAuth ingress.
+# This flag does not authenticate requests; verify that direct unauthenticated
+# access cannot bypass the platform boundary before deploying this configuration.
 #
 # If you renamed the `example_server` package, update the module path below.
 command:
   [
     "/bin/sh",
     "-c",
-    "export PYTHONPATH=/app/python/source_code/src:$PYTHONPATH && python -m example_server.app",
+    "export PYTHONPATH=/app/python/source_code/src:$PYTHONPATH && export MCP_TRUSTED_HTTP_INGRESS=true && python -m fisheries_mcp.app",
   ]

@@ -215,5 +215,7 @@ orchestrate toolkits remove --name my_server
   Registry and needs ICR authority. If `ce app create` fails on a registry
   permission error, set `IMAGE` (Path B) or use the `../code-engine-git-build/`
   kit which provisions the registry secret explicitly.
-- **No auth on the endpoint:** the MCP endpoint is public with no auth (matches
-  the pilot posture). For anything beyond a hackathon, front it with auth.
+- **Authentication is not provided by this kit:** Code Engine deployment does
+  not establish an authenticated ingress. The server refuses the platform port
+  by default; do not set `MCP_TRUSTED_HTTP_INGRESS=true` unless an approved
+  authenticated boundary is independently verified.

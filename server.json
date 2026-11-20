@@ -1,16 +1,10 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
-  "name": "io.github.GSA-TTS/example-mcp-server",
-  "description": "Starter MCP server for the GSA MCP hackathon. Replace this description and the coordinates below with your own server.",
+  "name": "io.github.gsa-mcp-hackathon/noaa-fisheries-data-gateway",
+  "description": "Local public NOAA survey prototype: cod/haddock catch, matched comparisons, coverage and scientific caveats.",
   "repository": {
-    "url": "https://github.com/GSA-TTS/example-mcp-server",
+    "url": "https://github.com/gsa-mcp-hackathon/noaa-fisheries-data-gateway",
     "source": "github"
   },
-  "version": "0.1.0",
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://example-mcp-server.app.cloud.gov/mcp"
-    }
-  ]
+  "version": "0.1.0"
 }

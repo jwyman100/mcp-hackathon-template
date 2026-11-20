@@ -1,0 +1,7 @@
+# Preserve exact bytes for files bound to published evidence hashes.
+src/fisheries_mcp/** -text
+submission/demo.py -text
+submission/receipt.py -text
+submission/container_mcp_smoke.py -text
+Dockerfile -text
+uv.lock -text

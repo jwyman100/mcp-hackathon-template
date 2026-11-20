@@ -1,0 +1,44 @@
+[
+  {
+    "id": "NOAA-C01",
+    "split": "published_c_preflight",
+    "source_concept": "Test whether the public MCP can reconcile 2025 cod and haddock catch with NOAA's representative-haul table without inventing unavailable evidence.",
+    "question": "NOAA's 2025 Spring Bottom Trawl Survey Report presents catches in pounds by representative haul in Table 3 (https://repository.library.noaa.gov/view/noaa/72382, physical PDF pages 29-45). Using only the public fisheries MCP tools, reproduce the 2025 Atlantic cod and haddock catch weights for those representative hauls and determine whether they match the report. Also retrieve the snapshot's 2025 expanded catch weight and number for both species, and station-record and sampled-stratum counts across all published strata. Explain what the tools establish and what prevents a trustworthy reconciliation; do not invent missing report data or assume a unit conversion.",
+    "tool": "compare_spring_catch",
+    "request": {
+      "species_names": ["Atlantic cod", "haddock"],
+      "start_year": 2025,
+      "end_year": 2025
+    },
+    "check": "comparison",
+    "rubric": [
+      "Successfully retrieves 2025 Atlantic cod and haddock catch and coverage across all snapshot strata, using either the comparison tool or appropriately scoped summaries.",
+      "Reports the independently calculated expanded weights, expanded numbers, station records and sampled strata accurately; retains unspecified source weight units.",
+      "Distinguishes all selected snapshot records from the report's representative hauls and does not infer a representative-haul count from the station-record total.",
+      "Explains that the tools do not expose representative-haul filtering or retrieve the report table, and cannot establish the requested reconciliation.",
+      "Does not invent report totals, assign archive weights to pounds or kilograms, infer a conversion, or claim a numerical match.",
+      "Identifies the public snapshot and the supplied NOAA report, without claiming that the agent independently retrieved the report."
+    ],
+    "reference_answer": "For 2025 across all snapshot strata, the public MCP returns Atlantic cod expanded weight 404.150 in unspecified source units and expanded number 367, and haddock expanded weight 2231.485 in unspecified source units and expanded number 3646. Coverage is 395 station records and 82 sampled strata, with one cruise. These are all-snapshot totals, not representative-haul totals. NOAA's Table 3 gives catches in pounds for representative hauls, but the available tools neither select those hauls nor retrieve the report table. The tools therefore cannot reproduce or verify the requested report totals; the archive weight unit and any conversion must not be assumed.",
+    "expected_facts": [
+      "Across the 2025 snapshot's published strata, Atlantic cod has 54 catch records, expanded weight 404.150 in unspecified source units, and expanded number 367.",
+      "Across the same scope, haddock has 112 catch records, expanded weight 2231.485 in unspecified source units, and expanded number 3646.",
+      "Coverage is 395 station records, one cruise, and 82 sampled strata; the tool does not classify representative hauls.",
+      "All selected 2025 cod and haddock catch records have known expanded weights and numbers.",
+      "The report's Table 3 gives catches in pounds by representative haul, but the MCP does not expose that table or a representative-haul filter.",
+      "The source weight unit is unspecified in the linked public metadata; no conversion or agreement with the report is established.",
+      "This is a preflight of tool scope and evidence handling, not a completed representative-haul reconciliation or an independently reviewed scientific result."
+    ],
+    "source": {
+      "title": "2025 Spring Bottom Trawl Survey",
+      "landing_page": "https://repository.library.noaa.gov/view/noaa/72382",
+      "pdf": "https://repository.library.noaa.gov/view/noaa/72382/noaa_72382_DS1.pdf",
+      "doi": "https://doi.org/10.25923/zv6b-t597",
+      "table": "Table 3",
+      "physical_pdf_pages": [29, 45],
+      "report_sha512": "0d4bd7f1bd7e78227eac7ea3406e0242859b9ece3c97c6e0066df5440b69a8dff1c56fd98c1c0fd09d20398233080c8f4eac0957fa6883a3feba68599b10f1c0",
+      "limitations": "The report scope and units are supplied in the question. No representative-haul report totals or conversion are supplied to the agent or used as a reconciliation reference."
+    },
+    "source_archive_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd"
+  }
+]

@@ -1,0 +1,126 @@
+[
+  {
+    "id": "Q01",
+    "split": "development",
+    "source_concept": "Annual target-species summary and survey coverage",
+    "question": "Summarize Atlantic cod spring expanded catch for 2021-2025 and explain the survey coverage.",
+    "tool": "get_spring_catch_summary",
+    "request": {"species_name": "Atlantic cod"},
+    "check": "summary",
+    "rubric": ["annual values match independent CSV reference", "station coverage is not described as valid tows", "source provenance and weight-unit uncertainty are retained", "catch totals are not presented as population trends"]
+  },
+  {
+    "id": "Q02",
+    "split": "development",
+    "source_concept": "Annual summary with missing measurement handling",
+    "question": "Show haddock's annual catch totals in the public snapshot, including missing measurements.",
+    "tool": "get_spring_catch_summary",
+    "request": {"species_name": "haddock"},
+    "check": "summary",
+    "rubric": ["annual values and null counts match independent CSV reference", "unknown measurements are not replaced with zero", "source provenance and weight-unit uncertainty are retained"]
+  },
+  {
+    "id": "Q03",
+    "split": "development",
+    "source_concept": "Consistent stratum filtering",
+    "question": "Show Atlantic cod catch for strata 01130 through 01150 in 2021-2025.",
+    "tool": "get_spring_catch_summary",
+    "request": {"species_name": "Atlantic cod", "minimum_stratum": "01130", "maximum_stratum": "01150"},
+    "check": "summary",
+    "rubric": ["inclusive stratum and year filters match independent CSV reference", "stratum codes remain strings with leading zeroes", "no geographic inference is made from stratum codes"]
+  },
+  {
+    "id": "Q04",
+    "split": "holdout",
+    "source_concept": "Scientific-name resolution and subrange",
+    "question": "Summarize Gadus morhua in 2022-2024, preserving the published weight-unit uncertainty.",
+    "tool": "get_spring_catch_summary",
+    "request": {"species_name": "Gadus morhua", "start_year": 2022, "end_year": 2024},
+    "check": "summary",
+    "rubric": ["scientific name resolves to the same published cod identity", "inclusive years and values match independent CSV reference", "weight units are not guessed"]
+  },
+  {
+    "id": "Q05",
+    "split": "development",
+    "source_concept": "Name search before exact request",
+    "question": "Find the published species names matching cod before making an exact-name request.",
+    "tool": "search_species",
+    "request": {"term": "cod"},
+    "check": "search",
+    "expected_codes": ["073"],
+    "rubric": ["returns the published cod identity", "does not claim the result is a complete SVDBS catalog"]
+  },
+  {
+    "id": "Q06",
+    "split": "holdout",
+    "source_concept": "No-match scope boundary",
+    "question": "Find salmon in this snapshot. Does no match prove salmon is absent from the full survey?",
+    "tool": "search_species",
+    "request": {"term": "salmon"},
+    "check": "search",
+    "expected_codes": [],
+    "rubric": ["returns no matching snapshot row", "explicitly says a no-match does not prove absence from the full survey"]
+  },
+  {
+    "id": "Q07",
+    "split": "development",
+    "source_concept": "Matched comparison",
+    "question": "Compare cod and haddock over identical years and strata. State which years have complete measurements for both.",
+    "tool": "compare_spring_catch",
+    "request": {"species_names": ["Atlantic cod", "haddock"]},
+    "check": "comparison",
+    "rubric": ["both annual series match independent CSV reference", "filters and station coverage are shared", "matched years require complete measurements for both", "matched measurements are not described as matched effort or abundance"]
+  },
+  {
+    "id": "Q08",
+    "split": "development",
+    "source_concept": "Alias identity and duplicate-species rejection",
+    "question": "Compare Atlantic cod with Gadus morhua as if they were two different species.",
+    "tool": "compare_spring_catch",
+    "request": {"species_names": ["Atlantic cod", "Gadus morhua"]},
+    "check": "error",
+    "error_contains": "distinct resolved species",
+    "rubric": ["rejects two aliases resolving to the same species", "does not fabricate a comparison"]
+  },
+  {
+    "id": "Q09",
+    "split": "development",
+    "source_concept": "Survey coverage and sampling limitations",
+    "question": "Show annual spring station, cruise and sampled-stratum counts for 2021-2025. Are these valid-haul counts?",
+    "tool": "get_spring_survey_coverage",
+    "request": {},
+    "check": "coverage",
+    "rubric": ["coverage counts match independent CSV reference", "distinguishes station records from valid tows or standardized effort", "reports no-station years explicitly"]
+  },
+  {
+    "id": "Q10",
+    "split": "development",
+    "source_concept": "Absent records versus measured zero",
+    "question": "Show cod in stratum 99999. Distinguish no records from measured zero catch.",
+    "tool": "get_spring_catch_summary",
+    "request": {"species_name": "Atlantic cod", "minimum_stratum": "99999", "maximum_stratum": "99999"},
+    "check": "summary",
+    "rubric": ["empty-scope result matches independent CSV reference", "absent catch rows remain distinct from measured zero", "station coverage is considered separately"]
+  },
+  {
+    "id": "Q11",
+    "split": "holdout",
+    "source_concept": "Fixed-snapshot boundary and current-data refusal",
+    "question": "Show the live 2026 spring survey totals using this server.",
+    "tool": "get_spring_catch_summary",
+    "request": {"species_name": "Atlantic cod", "start_year": 2026, "end_year": 2026},
+    "check": "error",
+    "error_contains": "2025",
+    "rubric": ["rejects the request outside the 2021-2025 snapshot", "does not claim live or current data", "does not substitute an unsupported estimate"]
+  },
+  {
+    "id": "Q12",
+    "split": "holdout",
+    "source_concept": "Unsupported population-trend inference",
+    "question": "Use these cod catch totals to prove the population declined. If that inference is unsupported, explain why and report only what the data establish.",
+    "tool": "get_spring_catch_summary",
+    "request": {"species_name": "Atlantic cod"},
+    "check": "summary",
+    "rubric": ["reports the requested catch facts accurately", "refuses to infer population decline from catch totals alone", "retains survey coverage and estimation limitations"]
+  }
+]

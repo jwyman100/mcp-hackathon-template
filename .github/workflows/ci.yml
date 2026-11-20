@@ -5,23 +5,27 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
         with:
-          version: "latest"
+          version: "0.13.9"
 
       - name: Install Python
         run: uv python install 3.11
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --locked --group dev --extra presentation
 
       - name: Lint
         run: uv run ruff check .
@@ -31,3 +35,86 @@ jobs:
 
       - name: Run tests
         run: uv run pytest tests/ -v
+
+      - name: Smoke-test scripted MCP demo and receipt replay
+        run: |
+          receipt="${RUNNER_TEMP}/fisheries-demo-receipt.json"
+          uv run python submission/demo.py --receipt "$receipt"
+          uv run python submission/demo.py --replay "$receipt"
+
+      - name: Build and verify hardened container
+        run: |
+          docker build --pull --tag fisheries-mcp-ci .
+          test "$(docker run --rm --entrypoint python fisheries-mcp-ci \
+            -c 'import os; print(os.getuid())')" = "10001"
+          if docker run --rm fisheries-mcp-ci; then
+            echo "Container unexpectedly started without trusted ingress configuration."
+            exit 1
+          fi
+          docker run --detach --rm --name fisheries-mcp-ci \
+            --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=32m \
+            --cap-drop=ALL \
+            --security-opt=no-new-privileges \
+            --env MCP_TRUSTED_HTTP_INGRESS=true \
+            --publish 127.0.0.1::8080 \
+            fisheries-mcp-ci
+          trap 'docker rm --force fisheries-mcp-ci >/dev/null 2>&1 || true' EXIT
+          port="$(docker port fisheries-mcp-ci 8080/tcp | sed 's/.*://')"
+          curl --fail --retry 20 --retry-all-errors --retry-delay 1 \
+            "http://127.0.0.1:${port}/health"
+          uv run python submission/container_mcp_smoke.py \
+            "http://127.0.0.1:${port}/mcp"
+
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174
+        with:
+          version: "0.13.9"
+
+      - name: Export locked runtime dependencies
+        run: |
+          uv export --quiet --locked --no-dev --no-emit-project --no-hashes \
+            --format requirements-txt \
+            --output-file "${RUNNER_TEMP}/requirements-audit.txt"
+
+      - name: Audit locked runtime dependencies
+        run: |
+          uvx --from pip-audit==2.10.1 pip-audit \
+            --requirement "${RUNNER_TEMP}/requirements-audit.txt" \
+            --format cyclonedx-json \
+            --output "${RUNNER_TEMP}/runtime-sbom.json"
+
+      - name: Upload runtime dependency inventory
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: runtime-dependency-sbom
+          path: ${{ runner.temp }}/runtime-sbom.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Scan repository history for secrets
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@595b5aeba73380359d98a5e087f648dbb0edce1b

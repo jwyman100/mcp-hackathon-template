@@ -39,6 +39,10 @@ register as a *remote* toolkit; the local kit ships the code and runs it as a
 Each kit's `README.md` has the full runbook, a `.env.example` (no secrets), and
 idempotent scripts.
 
-> **Security note (all kits):** the deployed MCP endpoint is public with **no
-> auth** by default, matching the public-data pilot posture. Front it with auth
-> for anything beyond a hackathon.
+> **Security note:** the MCP application has no built-in authentication. The
+> Code Engine kits do not establish an authenticated ingress and are not
+> approved as public endpoints. The server refuses platform-injected ports
+> unless `MCP_TRUSTED_HTTP_INGRESS=true` is explicitly supplied; that setting
+> is an operator assertion, not an authentication mechanism. Use the local
+> stdio kit for this prototype. Do not enable the setting for Code Engine
+> without a separately verified, approved authenticated ingress.

@@ -1,27 +1,37 @@
-# Deploying Your MCP Server
+# Deployment options and security boundary
 
 Local development runs your server over **stdio** (how Claude Desktop / Claude
 Code launch it). To share it with an agent platform, deploy it to a host that
 serves it over **streamable-HTTP**, then register it.
 
-This template ships deployment kits for two targets:
+This repository contains deployment examples, but **no hosted deployment is
+approved by this prototype**. Use local stdio by default. Hosted deployment
+requires an independently approved, authenticated ingress and review of the
+target agency's security requirements.
+
+The examples cover:
 
 | Target | Kits | Transport | When to use |
 |---|---|---|---|
 | **IBM watsonx Orchestrate** | [`ibm/`](ibm/) — 3 kits | stdio (local) **or** streamable-HTTP (Code Engine) | You're evaluating/agent-building in watsonx Orchestrate |
 | **Databricks** | [`databricks/`](databricks/) | streamable-HTTP (Databricks Apps) | You're deploying alongside a Databricks workspace |
 
-## The server code doesn't change
+## HTTP startup is fail-closed
 
-Every kit runs the **same** server in `src/example_server/`. The entry point
-`app.py` auto-selects its transport:
+The server uses `src/fisheries_mcp/` and the public SQLite snapshot. Local stdio
+and loopback HTTP are the supported prototype modes. The entry point selects:
 
-- a platform port (`DATABRICKS_APP_PORT` or `PORT`) → **HTTP** on that port;
+- a platform port (`DATABRICKS_APP_PORT` or `PORT`) → **HTTP** only when
+  `MCP_TRUSTED_HTTP_INGRESS=true`;
 - `MCP_TRANSPORT=streamable-http` → HTTP on `MCP_HOST:MCP_PORT`;
 - otherwise → **stdio**.
 
-So IBM Code Engine and Databricks Apps both "just work" — they inject a port and
-the server serves HTTP with `/mcp` + `/health`.
+The server rejects platform ports and non-loopback binds by default. The
+`MCP_TRUSTED_HTTP_INGRESS` setting is only an explicit operator assertion: it
+does not add authentication or prove that the platform protects the endpoint.
+Never enable it until the platform's authenticated ingress is verified and
+direct unauthenticated access is blocked. An application login page or OAuth
+redirect alone is not a complete MCP authorization test.
 
 ## IBM (three options, lowest → highest overhead)
 
@@ -40,7 +50,9 @@ See [`ibm/README.md`](ibm/README.md) for the full chooser. In short:
 
 See [`databricks/README.md`](databricks/README.md). Deploy as a Databricks App:
 the kit syncs your repo to the workspace and runs `databricks apps deploy`. The
-app is gated by workspace auth, so clients present a bearer token.
+server configuration explicitly acknowledges Databricks OAuth ingress. Verify
+the route rejects unauthenticated access and cannot bypass that boundary before
+deploying.
 
 ## cloud.gov (bonus)
 
@@ -50,10 +62,13 @@ comments in `manifest.yaml`.
 
 ---
 
-## Security reminder
+## Security status
 
-All kits expose the MCP endpoint with **no authentication** by default (except
-Databricks, which is gated by workspace SSO). That matches a public-data
-hackathon posture. For anything beyond a hackathon, front the endpoint with auth
-and review your agency's ATO requirements. Never commit secrets — each kit's
-`.env` is git-ignored and holds coordinates only.
+The MCP application has no built-in authentication or dataset authorization.
+The Databricks kit documents a platform OAuth boundary that must be verified
+from the deployed environment. The IBM Code Engine examples do not establish an
+authenticated ingress and must not be used as public endpoints. None of these
+examples demonstrates production readiness or agency authorization. See
+[`SECURITY.md`](../SECURITY.md) for implemented controls and deployment gates.
+Never commit secrets; deployment `.env` files are ignored and should contain
+only non-secret coordinates.

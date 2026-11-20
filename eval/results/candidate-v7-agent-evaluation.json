@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "candidate": "candidate-v7",
+  "dataset": {
+    "title": "NOAA NEFSC public spring survey: cod/haddock, 2021-2025",
+    "source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+    "sqlite_sha256": "8715c420a1ea48f003d0c51457df6c940dc677b4522b9f992ea33c9006893b6d"
+  },
+  "evaluated_bundle_sha256": "38bc6e154901df59e438da9061d05c911e71c3979ce9c78a4e85d35a086df0ee",
+  "configuration": {
+    "endpoint": "databricks-claude-opus-4-8",
+    "options": {
+      "max_tokens": 4000
+    },
+    "temperature": null,
+    "temperature_note": "Not recorded in the supplied run configuration; do not assume a value.",
+    "max_rounds": 6,
+    "max_tools": 8,
+    "question_timeout_seconds": 180,
+    "model_request_timeout_seconds": 60,
+    "model_retries": 0,
+    "versions": {
+      "fastmcp": "2.14.7",
+      "mlflow": "3.18.0",
+      "openai": "2.54.0",
+      "databricks_openai": "0.18.0"
+    }
+  },
+  "batches": [
+    {
+      "split": "development",
+      "classification": "development",
+      "cases": ["Q01", "Q02", "Q03", "Q05", "Q07", "Q08", "Q09", "Q10"]
+    },
+    {
+      "split": "holdout",
+      "classification": "confirmation; repository-visible, not blind",
+      "cases": ["Q04", "Q06", "Q11", "Q12"]
+    },
+    {
+      "split": "published_reference_corrected",
+      "classification": "supplementary source-assisted",
+      "cases": ["NOAA-A02"]
+    },
+    {
+      "split": "published_report_context",
+      "classification": "supplementary curated-context discovery",
+      "cases": ["NOAA-D01"]
+    },
+    {
+      "split": "published_c_preflight",
+      "classification": "supplementary reconciliation-limit preflight",
+      "cases": ["NOAA-C01"]
+    }
+  ],
+  "repeats_per_case": 3,
+  "trial_count": 45,
+  "completed_trial_count": 45,
+  "tool_call_counts": {
+    "total": 84,
+    "successful": 82,
+    "failed": 2,
+    "recovered_failures": 2,
+    "note": "The two failed calls were malformed search_species calls in Q06:2 and Q06:3; each trial recovered with a successful call."
+  },
+  "scientific_review_status": "UNVERIFIED",
+  "scientific_review_note": "The trial answers have not received a comprehensive independent scientific review. Later feedback on one excerpt did not establish scientific approval or a trial pass.",
+  "targeted_feedback": {
+    "date": "2026-11-20",
+    "trial": "NOAA-D01:2",
+    "scope": "A shortened excerpt from one historical answer, not the complete answer or the trial suite.",
+    "question": "whether the 2023 survey context directly explains the lower figures.",
+    "responses": [
+      {
+        "perspective": "Survey-database subject-matter contact",
+        "assessment": "unsure",
+        "detail": "Highlighted the geographic pattern of sampling and patchy cod catches, and recommended consultation with survey and cod-population specialists."
+      },
+      {
+        "perspective": "Developer familiar with the survey database",
+        "assessment": "no",
+        "detail": "The supplied interaction presented the claim and review question; the response included an uncertain explanation for why the survey was shortened."
+      },
+      {
+        "perspective": "Submitted review form",
+        "assessment": "unable to assess",
+        "detail": "Indicated the question was outside the respondent's expertise and recommended cod-population specialists. It is not known whether this respondent overlaps with either message."
+      }
+    ],
+    "limitations": "Informal feedback supplied by the participant; identities and quotations are not included. It did not assess the full answer or trial suite, verify the numerical results, establish causation, or provide scientific approval."
+  },
+  "numerical_payload_review": {
+    "status": "consistent_with_supplied_reference",
+    "scope": "Requested numerical payloads in development and supplementary cases were compared with packaged independent_reference.json; supplementary values were also checked against the local public snapshot/reference. Confirmation answers were reviewed against the supplied reference.",
+    "limitations": [
+      "The original public CSV archive was not independently reprocessed as part of this bundle review.",
+      "Numerical payload agreement does not validate scientific interpretation or establish record-level report reconciliation.",
+      "Floating-point display and rounding are tolerated when comparing reported values."
+    ]
+  },
+  "case_findings": [
+    {
+      "id": "Q01",
+      "finding": "All three report the cod annual series and coverage with unspecified weight units.",
+      "observed_issue": "Q01:1 and Q01:3 attribute lower 2023 catch to reduced sampling without establishing cause."
+    },
+    {
+      "id": "Q02",
+      "finding": "All three report haddock annual values and zero unknown measurements among recorded catch rows.",
+      "observed_issue": "Q02:1 attributes results to reduced sampling without establishing causation; this case does not test an actually missing measurement."
+    },
+    {
+      "id": "Q03",
+      "finding": "All three use the requested inclusive stratum range; the 2025 scope has no catch records and null totals.",
+      "observed_issue": "Q03:1 incorrectly calls all years observed despite its 2025 no-record row. Answers also overstate what station records establish about effort."
+    },
+    {
+      "id": "Q04",
+      "finding": "All three resolve Gadus morhua to Atlantic cod and report the reference values.",
+      "observed_issue": "Q04:2 calls unspecified units dimensionless and attributes part of a catch change to sampling without establishing cause."
+    },
+    {
+      "id": "Q05",
+      "finding": "All three return the published cod identity and limit the search to this snapshot.",
+      "observed_issue": "Each offers an exact-name follow-up but none performs one; whether the question requires that call is ambiguous."
+    },
+    {
+      "id": "Q06",
+      "finding": "All three correctly distinguish no snapshot match from absence in the full survey.",
+      "observed_issue": "Q06:2 and Q06:3 first make malformed search calls, then recover successfully."
+    },
+    {
+      "id": "Q07",
+      "finding": "All three report the two species over a shared scope and distinguish complete measurements from matched effort.",
+      "observed_issue": "Q07:2 suggests shared strata make a per-area comparison more consistent; no area normalization was performed."
+    },
+    {
+      "id": "Q08",
+      "finding": "All three identify the names as aliases of one species and refuse to fabricate a comparison.",
+      "observed_issue": "No trial invokes the duplicate-species comparison tool; this demonstrates answer-level refusal, not runtime rejection."
+    },
+    {
+      "id": "Q09",
+      "finding": "All three report coverage and correctly state that station records are not valid-haul counts.",
+      "observed_issue": "This case has no year with zero station records and does not test that edge case."
+    },
+    {
+      "id": "Q10",
+      "finding": "All three report no selected station/catch records and null totals for stratum 99999.",
+      "observed_issue": "Q10:2 says stations with no cod rows would establish measured zero; absent catch rows remain unknown. Q10:3 overstates that no stations mean no opportunity for catch beyond this selected scope.",
+      "slide_summary": "One answer treats absent catch rows as measured zero."
+    },
+    {
+      "id": "Q11",
+      "finding": "All three refuse to invent live 2026 values.",
+      "observed_issue": "No tool is called; the shared data dictionary already supplies the snapshot boundary."
+    },
+    {
+      "id": "Q12",
+      "finding": "All three report the requested values and decline to infer population decline.",
+      "observed_issue": "Q12:3 incorrectly says weight and number are both lowest in 2023; 2025 weight is lower. It also makes an unsupported causal claim about station counts and catch.",
+      "slide_summary": "One answer misranks weight and implies unsupported causation."
+    },
+    {
+      "id": "NOAA-A02",
+      "finding": "All three retrieve the 2025 snapshot coverage and report the supplied report counts, 370 + 25 = 395.",
+      "observed_issue": "Equal aggregate counts do not establish which records are non-representative; two answers overstate record identity. The report facts are supplied in the question.",
+      "slide_summary": "Matching aggregate station counts do not establish row identity."
+    },
+    {
+      "id": "NOAA-D01",
+      "finding": "All three select the curated 2023 context card, report catch and coverage, cite its source, and reject a population-trend conclusion.",
+      "observed_issue": "All three also overstate causation or equate station-record change with effort; the card is curated, not live report retrieval.",
+      "slide_summary": "All three find the context card; all overstate causation or effort."
+    },
+    {
+      "id": "NOAA-C01",
+      "finding": "All three retrieve values matching the supplied reference and decline to invent a Table 3 catch reconciliation.",
+      "observed_issue": "Some answers infer that the snapshot includes the report's non-representative stations from equal aggregate counts; row identity is not established."
+    }
+  ]
+}

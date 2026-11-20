@@ -28,9 +28,9 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 STAGE_DIR="${SCRIPT_DIR}/_stage"
 TOOLKIT_YAML="${SCRIPT_DIR}/_toolkit.generated.yaml"
 
-# The package to ship. If you renamed `example_server`, set PACKAGE_NAME to match
+# The package to ship. If you renamed `fisheries_mcp`, set PACKAGE_NAME to match
 # (or export it before running).
-PACKAGE_NAME="${PACKAGE_NAME:-example_server}"
+PACKAGE_NAME="${PACKAGE_NAME:-fisheries_mcp}"
 
 echo "=== Target ==="
 echo "  env name:      ${WXO_ENV_NAME}"
@@ -78,7 +78,9 @@ rm -rf "${STAGE_DIR}"
 mkdir -p "${STAGE_DIR}"
 cp -R "${REPO_ROOT}/src/${PACKAGE_NAME}" "${STAGE_DIR}/${PACKAGE_NAME}"
 cp "${SCRIPT_DIR}/server.py" "${STAGE_DIR}/server.py"
-cp "${SCRIPT_DIR}/requirements.txt" "${STAGE_DIR}/requirements.txt"
+cp "${REPO_ROOT}/requirements.txt" "${STAGE_DIR}/requirements.txt"
+mkdir -p "${STAGE_DIR}/data"
+cp "${REPO_ROOT}/data/spring.sqlite" "${STAGE_DIR}/data/spring.sqlite"
 # Drop caches that may have been copied from src/.
 find "${STAGE_DIR}" -type d -name '__pycache__' -prune -exec rm -rf {} + 2>/dev/null || true
 STAGE_SIZE="$(du -sh "${STAGE_DIR}" | cut -f1)"

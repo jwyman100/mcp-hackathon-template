@@ -1,24 +1,29 @@
 ---
 # cloud.gov (Cloud Foundry) deployment manifest.
 #
-# cloud.gov injects PORT=8080 at runtime; app.py picks that up and serves HTTP.
+# cloud.gov injects PORT=8080. The app now rejects that port unless
+# MCP_TRUSTED_HTTP_INGRESS=true is explicitly configured after ingress review.
+# This no-route example is not an approved hosted deployment.
 # Deploy with the Python buildpack (no Docker needed):
 #
 #   cf login -a api.fr.cloud.gov --sso
 #   cf target -o <your-org> -s <your-space>
+# This no-route manifest is an example only; app startup fails closed unless an
+# approved authenticated ingress has been verified and explicitly acknowledged.
+# It is not an approved hosted deployment.
+#
 #   cf push
 #
 # Rename the app and route to something unique to you before pushing.
 applications:
-  - name: example-mcp-server
+  - name: fisheries-mcp
     buildpacks:
       - python_buildpack
-    command: PYTHONPATH=src python -m example_server.app
+    command: PYTHONPATH=src python -m fisheries_mcp.app
     health-check-type: http
     health-check-http-endpoint: /health
     env:
       PYTHONUNBUFFERED: 1
-    routes:
-      - route: example-mcp-server.app.cloud.gov
+    no-route: true
     disk_quota: 1G
     memory: 256M

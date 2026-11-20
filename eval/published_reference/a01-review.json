@@ -1,0 +1,43 @@
+{
+  "trial": "NOAA-A01:1",
+  "review_method": "Assistant review of user-supplied answer and expanded trace transcript; not independent domain review.",
+  "outcome": "Supplied trace supports the numerical result, tool use, scope and caveat retention for this one source-assisted question.",
+  "evidence": {
+    "tool_calls_shown": 1,
+    "tool": "get_spring_survey_coverage",
+    "request": {"start_year": 2025, "end_year": 2025},
+    "resolved_strata": ["00000", "99999"],
+    "is_error": false,
+    "station_records": 395,
+    "cruises": 1,
+    "sampled_strata": 82,
+    "reported_source_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd"
+  },
+  "findings": [
+    "The answer's 395 count agrees with the successful MCP response and the independent public-CSV calculation.",
+    "The answer correctly sums the report figures supplied in the question and does not claim all records are representative.",
+    "The answer distinguishes aggregate agreement from one-to-one reconciliation and retains the absence of haul/gear validity filtering.",
+    "The answer attributes the station count to the public snapshot and the report figures to the question; it does not claim autonomous report retrieval.",
+    "The final sentence does not provide a direct NOAA report URL or citation. It says the report figures are cited in the question. This only partially satisfies the explicit report-citation rubric item.",
+    "The initial pasted answer had malformed Markdown link syntax; the expanded trace is plain text and cannot establish whether that was model output or copying."
+  ],
+  "rubric_review": {
+    "2025_count_via_tool": "satisfied",
+    "report_counts_summed": "satisfied",
+    "representative_status_caveat": "satisfied",
+    "aggregate_vs_record_level_caveat": "satisfied",
+    "public_data_and_report_citation": "partial: public snapshot identified; report citation not restated"
+  },
+  "evaluator_erratum": {
+    "description": "The A01 question incorrectly cites PDF page 1. The Overview is on physical PDF page 3.",
+    "correct_source": "https://repository.library.noaa.gov/view/noaa/72382/noaa_72382_DS1.pdf",
+    "effect": "Counts are unchanged. This is an evaluator-authored citation error, not an agent-generated factual error. Original question retained for prior-run identity."
+  },
+  "not_established": [
+    "Byte-for-byte identity of the evaluated SQLite snapshot; the trace contains a source-hash claim, not a database-file checksum.",
+    "Endpoint/model settings, bundle configuration, or timing verification from this trace alone.",
+    "Independent NOAA report discovery, scientific certification, general accuracy, or comparative improvement."
+  ],
+  "overall_evaluation_status": "UNVERIFIED; the supplied answer does not fully meet the citation rubric item",
+  "mlflow_modified": false
+}
