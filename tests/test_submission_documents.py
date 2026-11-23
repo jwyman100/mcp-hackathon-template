@@ -42,6 +42,39 @@ def test_agent_evaluation_manifest_validates_counts_and_review_status(
         load_agent_evaluation(corrupted)
 
 
+def test_current_evaluation_rejects_inconsistent_review(tmp_path: Path) -> None:
+    import copy
+    import json
+
+    from submission.build_documents import load_current_evaluation
+
+    manifest = load_current_evaluation()
+    corrupted = tmp_path / "current-evaluation.json"
+    variants = []
+
+    wrong_trials = copy.deepcopy(manifest)
+    wrong_trials["mcp"]["completed_trials"] -= 1
+    variants.append(wrong_trials)
+
+    duplicate_issue = copy.deepcopy(manifest)
+    issues = duplicate_issue["answer_review"]["batches"][0]["issues"]
+    issues[1]["trial"] = issues[0]["trial"]
+    variants.append(duplicate_issue)
+
+    unapproved_review = copy.deepcopy(manifest)
+    unapproved_review["answer_review"]["scientific_review"] = "PASS"
+    variants.append(unapproved_review)
+
+    wrong_comparison = copy.deepcopy(manifest)
+    wrong_comparison["data_access_comparison"]["trials_per_arm"] -= 1
+    variants.append(wrong_comparison)
+
+    for variant in variants:
+        corrupted.write_text(json.dumps(variant), encoding="utf-8")
+        with pytest.raises(ValueError, match="inconsistent counts or review"):
+            load_current_evaluation(corrupted)
+
+
 def test_evidence_appendix_survives_document_roundtrip(tmp_path: Path) -> None:
     docx = pytest.importorskip("docx")
     pytest.importorskip("pptx")
@@ -81,13 +114,15 @@ def test_generated_deliverables_preserve_discrepancies(tmp_path: Path) -> None:
     pptx = pytest.importorskip("pptx")
     from submission.build_documents import (
         load_agent_evaluation,
+        load_current_evaluation,
         make_deck,
         make_document,
+        make_video_deck,
     )
 
     root = Path(__file__).resolve().parents[1]
     report = json.loads(
-        (root / "eval" / "results" / "candidate-v2-all.json").read_text(
+        (root / "eval" / "results" / "candidate-v7-hardened-scripted.json").read_text(
             encoding="utf-8"
         )
     )
@@ -103,16 +138,64 @@ def test_generated_deliverables_preserve_discrepancies(tmp_path: Path) -> None:
     document.save(doc_template)
 
     deck_path = tmp_path / "deck.pptx"
+    video_deck_path = tmp_path / "video-deck.pptx"
     doc_path = tmp_path / "evaluation.docx"
+    current_evaluation = load_current_evaluation()
     receipt = {
         "tool_calls": [{}, {}, {}],
-        "public_source": {"source_sha256": "a" * 64},
-        "database_sha256": "b" * 64,
+        "public_source": {
+            "source_sha256": current_evaluation["source"]["public_archive_sha256"]
+        },
+        "database_sha256": current_evaluation["source"]["sqlite_sha256"],
     }
     agent_evaluation = load_agent_evaluation()
     make_deck(deck_template, deck_path, report, receipt, agent_evaluation)
+    make_video_deck(deck_path, video_deck_path)
     make_document(doc_template, doc_path, report, agent_evaluation)
     saved_deck = pptx.Presentation(deck_path)
+    saved_video = pptx.Presentation(video_deck_path)
+    assert len(saved_video.slides) == 6
+    expected_titles = (
+        "SI-Ready Gateway",
+        "Five tools for public fisheries data",
+        "Demo: a question with a trap",
+        "Getting data is only the first step",
+        "The AI spotted a useful clue",
+        "Useful access, with scientists in the loop",
+    )
+    for number, (slide, title) in enumerate(
+        zip(saved_video.slides, expected_titles, strict=True), start=1
+    ):
+        assert any(
+            title in shape.text for shape in slide.shapes if shape.has_text_frame
+        )
+        if number > 1:
+            footer = next(
+                shape.text
+                for shape in slide.shapes
+                if shape.has_text_frame
+                and shape.text.startswith("PUBLIC NOAA SNAPSHOT")
+            )
+            assert footer.endswith(f"{number:02}")
+
+    script_lines = (
+        (root / "submission" / "VIDEO.md")
+        .read_text(encoding="utf-8")
+        .split("## Script\n", 1)[1]
+        .splitlines()
+    )
+    script = []
+    quote = []
+    for line in script_lines + [""]:
+        if line.startswith("> "):
+            quote.append(line[2:])
+        elif quote:
+            script.append(" ".join(quote))
+            quote = []
+    assert script == [
+        " ".join(slide.notes_slide.notes_text_frame.text.split())
+        for slide in saved_video.slides
+    ]
     deck_text = "\n".join(
         shape.text
         for slide in saved_deck.slides
@@ -132,49 +215,56 @@ def test_generated_deliverables_preserve_discrepancies(tmp_path: Path) -> None:
 
     for text in (deck_text, document_text):
         assert "SAMPLE CLAIM" not in text
-        assert "UNVERIFIED" in text
         assert "scientific approval" in text
         assert "p95" not in text
         assert "duration" not in text.lower()
         assert "latency" not in text.lower()
-    assert "45 model-selected trials" in deck_text
-    assert "82/84" in deck_text
-    assert "All three find the context card" in deck_text
-    assert "Five focused tools" in deck_text
-    assert "PUBLIC CONTEXT + RECEIPT" in deck_text
+    assert "UNVERIFIED" in document_text
+    assert "NOAA Fisheries Data Gateway: Evaluation" in document_text
+    assert "Five tools for public fisheries data" in deck_text
+    assert "36/36" in deck_text
+    assert "80/80" in deck_text
+    assert "24/24" in deck_text
+    assert "Without tools: 0/24" in deck_text
+    assert "6 ANSWERS" in deck_text and "DATA CHECK" in deck_text
+    assert "37 OTHER" in deck_text
+    assert "that context matters" in deck_text
+    assert "cannot measure how much sampling explains" in deck_text
+    assert "Checked tool results matched calculations from NOAA files." in deck_text
+    assert "claims the evidence did not support" not in deck_text
     assert "70 of 377" in deck_text
     assert "609.780" in deck_text and "416.396" in deck_text
-    assert "Calls are scripted, not model-selected" in deck_text
-    assert "no overall agent pass rate is claimed" in deck_text
-    assert "A02 and D01 are" not in deck_text
+    assert "This example is scripted; it is not an AI-selected answer." in deck_text
+    assert "not whether every answer is correct" in deck_text
     assert "Fisheries" in deck_text and "SI-Ready Gateway" in deck_text
-    assert "NEFSC MISSION" in deck_text
-    assert "45 completed, with 82 successful calls out of 84" in document_text
-    assert "no tows" in document_text
-    assert "Temperature was not recorded" in document_text
-    assert "Q10:2" in document_text and "Q12:3" in document_text
-    assert "Candidate-v7 agent trials now include A02 and D01" in document_text
-    assert "FastMCP 2.14.7" in deck_text and "FastMCP 2.14.7" in document_text
-    assert "loopback-only" in deck_text
-    assert "Limited subject-matter input on one claim" in deck_text
-    assert "Targeted subject-matter feedback" in document_text
-    assert "historical NOAA-D01:2" in document_text
-    assert "unsure" in document_text and "unable to assess" in document_text
-    assert "not the complete answer or the trial suite" in document_text
-    assert "no full scientific review or approval" in document_text
-    assert "CycloneDX inventory" in document_text
-    assert "does not authenticate callers" in document_text
-    assert (
-        "No agent rerun has been performed after the latest changes"
-        not in document_text
+    assert "a scientist still needs to check" in (
+        saved_deck.slides[5].notes_slide.notes_text_frame.text
     )
-    assert "not live report discovery" in document_text
-    assert (
-        "trial-FAIL recommendations remain assistant evidence judgments"
-        in document_text
+    video_demo_text = "\n".join(
+        shape.text for shape in saved_video.slides[2].shapes if shape.has_text_frame
     )
-    assert "Discrepancies and their owners" in document_text
-    assert "Overview is on physical PDF page 3" in document_text
+    assert "LIVE DEMO" in video_demo_text
+    assert "REFERENCE VALUES FROM OUR PUBLIC DATA" in video_demo_text
+    assert "live recording is a separate example" in video_demo_text
+    assert "This example is scripted" not in video_demo_text
+    assert "separate from the evaluation" in (
+        saved_video.slides[2].notes_slide.notes_text_frame.text
+    )
+    review_script = saved_video.slides[4].notes_slide.notes_text_frame.text
+    assert "That's useful context" in review_script
+    assert "cannot measure how much sampling explains" in review_script
+    assert "not a scientific verdict" in review_script
+    assert "45 main trials completed" in document_text
+    assert "80/80" in document_text
+    assert "24/24" in document_text and "0/24" in document_text
+    assert "no underlying records" in document_text
+    assert "37 trials were not fully reviewed" in document_text
+    assert "This is useful context" in document_text
+    assert "AI-assisted, not independent scientific review" in document_text
+    assert "No scientific approval is claimed" in document_text
+    assert "not a blind test" in document_text
+    assert "does not authenticate users" in document_text
+    assert "Neither new run is claimed complete" not in document_text
     for heading in (
         "1. Overview and Objectives",
         "2. Testing Methodology",
@@ -183,10 +273,8 @@ def test_generated_deliverables_preserve_discrepancies(tmp_path: Path) -> None:
         "5. Lessons Learned & Recommendations",
     ):
         assert heading in document_text
-    assert "Provisional scientific schema contract" in document_text
-    assert "not an expert-approved" in document_text
-    assert "SSO alone is not data authorization" in document_text
-    assert "schema-contract" not in document_text
+    assert "hardened-agent-evaluation.json" in document_text
+    assert "candidate-v7-agent-evaluation.json" in document_text
 
     del agent_evaluation["targeted_feedback"]
     legacy_manifest = tmp_path / "legacy-manifest.json"
@@ -203,10 +291,14 @@ def test_generated_deliverables_preserve_discrepancies(tmp_path: Path) -> None:
     )
     legacy_notes = legacy_deck.slides[-1].notes_slide.notes_text_frame.text
     legacy_doc_text = "\n".join(p.text for p in docx.Document(doc_path).paragraphs)
-    assert "Limited subject-matter input on one claim" not in legacy_deck_text
-    assert (
-        "No scientific approval or enterprise readiness is claimed" in legacy_deck_text
+    assert "We received limited feedback on one earlier claim" not in legacy_deck_text
+    assert "not scientific approval or a system ready for internal use" in (
+        legacy_deck_text
     )
-    assert "Targeted feedback on" not in legacy_notes
-    assert "Targeted subject-matter feedback" not in legacy_doc_text
-    assert "No full scientific review or approval is claimed" in legacy_doc_text
+    assert "Limited feedback addressed" not in legacy_notes
+    assert "Limited subject-matter feedback" not in legacy_doc_text
+    assert "No scientific approval is claimed" in legacy_doc_text
+
+    receipt["database_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="evidence sources differ"):
+        make_deck(deck_template, deck_path, report, receipt, agent_evaluation)

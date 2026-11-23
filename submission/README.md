@@ -1,4 +1,22 @@
-# Submission package and remaining gates
+# Submission guide and technical evidence
+
+## Start here
+
+- [Reference slides without a recording](release/repository/fisheries-deck.pptx) and
+  [evaluation document](release/repository/fisheries-evaluation.docx).
+- [Video slide template](release/repository/fisheries-video-deck.pptx) and
+  [short recording steps](VIDEO.md).
+- [Current AI evaluation](../eval/results/hardened-agent-evaluation.json):
+  45 MCP trials completed, with 80 tool calls and no reported tool errors.
+  The checked numerical outputs matched separate calculations from NOAA's
+  original files. In six reviewed answers, the AI linked lower catches to
+  reduced sampling, useful context that the catch totals cannot quantify.
+  The partial AI-assisted review did not fully review 37 other trials.
+
+The included command-line demo is scripted. The recording deck can be used
+with a separate live demo; the finished recording and edited decks are separate
+from the repository templates. The AI trials are separate from both examples.
+None establishes scientific approval. The sections below provide technical detail.
 
 ## Narrative
 
@@ -43,9 +61,9 @@ The upstream FastMCP, Pydantic, thin-app, per-tool module, resource and prompt
 patterns are retained. Offline SQLite deliberately replaces a live API client;
 bounded results do not require pagination. The template's suggested
 Phoenix/LangChain/LLM-judge path is replaced by a bounded model-selected MCP
-loop, MLflow traces and manual rubric dimensions. We do not claim to have run
-Phoenix, automated judging or a no-tool baseline. These are implementation
-choices, not waivers of the requirement to show actual evidence.
+loop, MLflow traces and analyst-review dimensions. We do not claim to have run
+Phoenix or automated judging. The current no-tool baseline is a limited
+data-access comparison, not a comparison with an equally informed interface.
 
 The official templates were downloaded again for this candidate:
 
@@ -113,8 +131,9 @@ runtime user, and read-only snapshot permissions; CI is configured for a
 dependency audit, secret scan, dependency review, and read-only container smoke
 test. The container was built and checked locally; see
 [`container-verification.json`](container-verification.json). The GitHub
-workflow has not been run on this worktree. These are prototype safeguards,
-not enterprise authorization or a security certification.
+workflow passed on the fork's merged commit; it has not verified this later
+documentation revision or the destination repository. These are prototype
+safeguards, not enterprise authorization or a security certification.
 
 The historical candidate-v7 agent run used FastMCP 2.14.7. The current locked
 runtime uses FastMCP 3.4.11 after the dependency audit; those historical trials
@@ -155,7 +174,30 @@ scientific approval.
 After the security and dependency changes, a separate
 [hardened-runtime scripted run](../eval/results/candidate-v7-hardened-scripted.json)
 also passed 36/36 direct MCP checks against the independent public-CSV reference
-using FastMCP 3.4.11. This does not constitute a post-upgrade agent run.
+using FastMCP 3.4.11. This scripted result is not an agent run. A separate
+[current-runtime agent evaluation](../eval/results/hardened-agent-evaluation.json)
+has since been completed.
+
+### Current-runtime AI evaluation
+
+The new Databricks run completed 45 MCP trials, plus 36 no-tool trials and
+two smoke trials. All 80 recorded non-smoke MCP calls returned without a tool
+error. Checked coverage and catch payloads matched the independently
+recomputed NOAA CSV references.
+
+For eight questions repeated three times, the MCP arm supplied the requested
+snapshot result in 24/24 trials; the no-tool arm supplied it in 0/24. The
+no-tool arm had the same dictionary but no underlying records and different
+access instructions. This measures access and result presence, not overall
+accuracy or an advantage over equally informed SQL or files.
+
+A partial AI-assisted review flagged six answers that linked lower catches to
+reduced sampling. That is relevant context, but the catch totals alone cannot
+measure how much sampling explains. The other 37 MCP trials were not fully
+reviewed; this is not an overall accuracy score or a scientific verdict.
+The [sanitized manifest](../eval/results/hardened-agent-evaluation.json)
+records case IDs, excerpts, file hashes and limits. Raw exports are excluded
+because they may contain workspace identifiers and prompts.
 
 One shared development agent run produced answers for eight questions. The
 [public evidence appendix](public-evaluation-appendix.md) compares six questions'
@@ -221,17 +263,17 @@ before publicly identifying or quoting a reviewer. See the manifest's
 | Historical agent: 45 completed trials, 82/84 successful calls | [Run manifest and per-case findings](../eval/results/candidate-v7-agent-evaluation.json) | Overall answer accuracy; this used FastMCP 2.14.7, not the current 3.4.11 runtime |
 | Public evidence is replayable | [Current receipt](release/demo-receipt.json), [replay implementation](receipt.py) | A live model run, new source download or expert review |
 | Local container operated with runtime restrictions | [Container record and input hashes](container-verification.json), [MCP smoke verifier](container_mcp_smoke.py) | A passing GitHub Actions run or production authorization |
-| CI configured | [Workflow](../.github/workflows/ci.yml) | CI success until a run on the submitted commit is linked |
+| CI on the fork | [Successful CI run](https://github.com/jwyman100/mcp-hackathon-template/actions/runs/45185569653), [workflow](../.github/workflows/ci.yml) | This later documentation revision or a destination-repository run |
 | Interpretation problems remain visible | [Public appendix](public-evaluation-appendix.md), [candidate-v7 findings](../eval/results/candidate-v7-agent-evaluation.json) | That caveats prevented every unsupported answer |
 | Targeted subject-matter input received | `targeted_feedback` in the [historical manifest](../eval/results/candidate-v7-agent-evaluation.json) | Review of the full answer, numerical validation or causal approval |
-| Current answer-assessment and optional baseline prepared | [Review protocol](../eval/README.md#answer-assessment-separate-from-scientific-approval), [Databricks steps](../deploy/databricks/README.md#step-by-step-current-hardened-source-run) | A new agent/baseline result: workspace execution and review are pending |
+| Current agent run and data-access comparison | [Current manifest](../eval/results/hardened-agent-evaluation.json), [review protocol](../eval/README.md#answer-assessment-separate-from-scientific-approval) | Overall answer accuracy, scientific approval, or an MCP advantage over an equally informed interface |
 | Scientific schema-review lifecycle proposed | [Provisional contract](schema-contract.md) | An implemented or expert-approved approval gate |
 | Mission and presentation | [Scripted demo](demo.py), current deck and evaluation listed below | Measured researcher time savings or agency endorsement |
 
 No official numerical grading weights or vendor-platform bonus were found.
 The optional Databricks experiment is not a substitute for correctness evidence.
 
-## Generate the deck and evaluation document
+## Generate the submission documents
 
 The generator adapts the official GSA sample templates, removes their example
 claims/images, and inserts this project's results. Download the templates from
@@ -244,13 +286,13 @@ uv run python submission\demo.py --receipt C:\path\to\new-demo-receipt.json
 uv run python submission\build_documents.py --deck-template C:\path\to\sample.pptx --evaluation-template C:\path\to\sample.docx --results eval\results\candidate-v7-hardened-scripted.json --receipt C:\path\to\new-demo-receipt.json --agent-evaluation eval\results\candidate-v7-agent-evaluation.json --output-dir C:\path\to\new-output-directory
 ```
 
-The current release candidates are [the deck](release/fisheries-deck.pptx) and
-[evaluation document](release/fisheries-evaluation.docx). The deck and evaluation
-include the provisional schema contract, planned enterprise boundaries,
-mission alignment, receipt/replay workflow, historical findings and the
-candidate-v7 agent run manifest by default. The agent run is explicitly
-identified as historical and is not presented as an evaluation of the upgraded
-FastMCP runtime.
+The generator creates the [reference deck](release/repository/fisheries-deck.pptx),
+the [six-slide recording template](release/repository/fisheries-video-deck.pptx),
+and the [evaluation document](release/repository/fisheries-evaluation.docx).
+The templates do not include the recorded demo. They summarize the current
+evaluation and its limits; the candidate-v7 agent run remains separate
+historical evidence. The schema contract and receipt/replay details are in this
+guide and the linked technical files.
 
 The earlier `candidate-v7-sme-feedback` receipt is preserved for historical
 container/server provenance. The current demo adds a clearer interpretation
@@ -260,7 +302,8 @@ Use the `release` receipt to replay the current code.
 The configured CI container smoke test connects to `/mcp`, discovers tools,
 resolves cod and checks the 2022-2023 public catch results in addition to
 checking `/health`. Those container checks were also performed locally.
-GitHub CI remains unverified until run on the submission commit.
+The fork's CI passed on the merged commit; this later documentation revision
+and any destination-repository CI run have not yet been verified.
 Earlier local binary
 drafts, including candidate-v5, and Office lock files are ignored, not deleted;
 do not include them in the release. They contain superseded claims or scope
@@ -270,9 +313,8 @@ scripted result JSON as historical evidence, including its scripted-only
 
 ## Outstanding before final submission
 
-- Confirm participant-only deadline/time, submission process, and repository
-  visibility. The participant reports a Monday extension; the
-  public page still lists November 20, so confirm the current cutoff.
+- Confirm the submission process and cutoff time. The public GSA page lists
+  November 23, without a specific time or submission link.
 - Confirm any required agency code-release/upload permission.
 - Disclose the limited one-excerpt consultation and that a full independent
   scientific review was not performed. Do not claim weight units, official
@@ -281,15 +323,14 @@ scripted result JSON as historical evidence, including its scripted-only
   fisheries expert reviews the relevant claims.
 - Keep SSO, per-tool authorization, guardrails and auditability clearly labeled
   as future enterprise work; do not imply identity alone authorizes data access.
-- Keep all 33 trial records unverified until each applicable rubric dimension
-  has been reviewed. Do not rewrite their saved status or original answers.
+- Keep all 33 historical trial records unverified until each applicable rubric
+  dimension has been reviewed. Do not rewrite their saved status or answers.
 - Use [the maintainer guide](../CONTRIBUTING.md) for the code map, evaluation
   evidence lifecycle and clean-checkout test procedure.
-- Review the deck/document, replace any required team-identification details,
-  and rehearse the actual client flow.
+- Review the materials and add any required team details.
 - Use approved Databricks access and bounded model calls; do not deploy a public
   runtime. Plenty of available credits is not a reason to run an unbounded loop.
 
-No repository push, public deployment, external agent handoff, or submission has
-been performed. Internal-project improvement notes are deliberately stored
-outside this repository and are not included in the submission artifacts.
+The project has been pushed to the fork, but the participant controls the
+destination push and final submission. No public runtime deployment is claimed.
+Internal-project improvement notes are stored outside this repository.

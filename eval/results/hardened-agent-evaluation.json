@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "description": "Current-runtime Databricks evaluation of the public NOAA snapshot.",
+  "source": {
+    "export_sha256": "6bcaafd80077e74666c70cbf798ec682e3f0894ff778c56aa93fa433f714af4d",
+    "bundle_sha256": "80d933daf576a8f0e55b0080e63f014f490e0d8ec3cc321e8b0e9cb08ab12971",
+    "public_archive_sha256": "f273e8bbb56dcf8360e7df065b94f8dabaa3f2ea89111807951dea77c3eb65fd",
+    "sqlite_sha256": "8715c420a1ea48f003d0c51457df6c940dc677b4522b9f992ea33c9006893b6d",
+    "raw_export_in_repository": false,
+    "identity_limit": "Recorded server, agent-loop and database hashes matched the checkout; this is not independent runtime attestation. The raw export may contain workspace identifiers and prompts."
+  },
+  "configuration": {
+    "endpoint": "databricks-claude-opus-4-8",
+    "max_tokens": 4000,
+    "temperature": null,
+    "temperature_note": "Not recorded; the exact underlying model revision was also not recorded.",
+    "fastmcp": "3.4.11",
+    "mlflow": "3.18.0",
+    "holdout": "Repository-visible, not blind."
+  },
+  "mcp": {
+    "development_trials": 24,
+    "holdout_trials": 12,
+    "supplementary_trials": 9,
+    "completed_trials": 45,
+    "smoke_trials": 1,
+    "tool_calls": 80,
+    "tool_errors": 0
+  },
+  "no_tools": {
+    "development_trials": 24,
+    "holdout_trials": 12,
+    "completed_trials": 36,
+    "smoke_trials": 1
+  },
+  "data_access_comparison": {
+    "case_ids": ["Q01", "Q02", "Q03", "Q04", "Q07", "Q09", "Q10", "Q12"],
+    "repeats_per_case": 3,
+    "trials_per_arm": 24,
+    "mcp_supplied_requested_result": 24,
+    "no_tools_supplied_requested_result": 0,
+    "measure": "Presence of the requested snapshot values or no-record result in the answer, not overall answer accuracy.",
+    "limits": "Both arms had the same dictionary and paired questions, but the no-tool arm lacked the underlying records and had different access instructions. This compares access plus tooling, not MCP against equally informed SQL or files. Questions were repository-visible."
+  },
+  "numerical_payload_review": {
+    "coverage_payloads": 53,
+    "species_series_payloads": 35,
+    "matched_year_results": 4,
+    "result": "The checked payloads agreed with the applicable references, which were independently recomputed from the pinned public NOAA CSV archive.",
+    "limits": "Payload counts include repeats and do not establish final-answer correctness or scientific validity."
+  },
+  "answer_review": {
+    "method": "Partial AI-assisted analyst review, not independent scientific review.",
+    "scientific_review": "UNVERIFIED",
+    "identified_issue_trials": 8,
+    "other_trials_unverified": 37,
+    "limits": "The remaining 37 trials are not passes; other answer dimensions remain unverified. No overall agent accuracy or pass rate is claimed.",
+    "batches": [
+      {
+        "split": "development",
+        "trials": 24,
+        "answers_sha256": "0b7aaac5af432d70cd34163dd459e977e69d623176412a28a68a3132dfe2bc2d",
+        "configuration_sha256": "02d3543769eebb302ce216ee4bf02ea5a0c1c6e54e4fa27d357a42df66a51f71",
+        "issues": [
+          {"trial": "Q07:1", "dimension": "causal_claims", "category": "cause", "excerpt": "Lower totals that year partly reflect reduced coverage"},
+          {"trial": "Q07:2", "dimension": "causal_claims", "category": "cause", "excerpt": "partly reflect reduced sampling"}
+        ]
+      },
+      {
+        "split": "holdout",
+        "trials": 12,
+        "answers_sha256": "2d6b8f6daa3ee5f428172e781c871308e5b5d21fa2a2f5c8ccb57372ef1abe19",
+        "configuration_sha256": "002457e219298920d555e11853edb201d05141532ac3484db230d3c858f32ab5",
+        "issues": [
+          {"trial": "Q04:1", "dimension": "causal_claims", "category": "cause", "excerpt": "largely reflect **differences in survey coverage**"},
+          {"trial": "Q12:2", "dimension": "causal_claims", "category": "cause", "excerpt": "largely reflects far less sampling, not fewer fish"},
+          {"trial": "Q12:3", "dimension": "causal_claims", "category": "cause", "excerpt": "largely reflects far less sampling, not fewer fish"}
+        ]
+      },
+      {
+        "split": "published_reference_corrected",
+        "trials": 3,
+        "answers_sha256": "2e0405eabf641e06aa762bf29bc250cf0613ff34c2aeade6c6c9e76d858e4a2d",
+        "configuration_sha256": "114ca4f584eeb12951407b392f5ebd982a070635a4223e1083afa543a73e7213",
+        "issues": []
+      },
+      {
+        "split": "published_report_context",
+        "trials": 3,
+        "answers_sha256": "bea4f5b17e4397ad0bd0124a7c5e68c5da989dec5acc57c1bd7ad6397263e11f",
+        "configuration_sha256": "df7b73f858b84c4413917eab997dc30a89648794070c0803ae2c0de96dc8ad4c",
+        "issues": [
+          {"trial": "NOAA-D01:3", "dimension": "causal_claims", "category": "cause", "excerpt": "regardless of population size"}
+        ]
+      },
+      {
+        "split": "published_c_preflight",
+        "trials": 3,
+        "answers_sha256": "e52d9a6b4faec22f25fb5532a9c3c4da57967ed46f7ace239c5a153d81e80bbb",
+        "configuration_sha256": "61dee0c25f6825ea0f3a6f25b495bdb3687b25f60aa39bce4afc0ce5d80e7c31",
+        "issues": [
+          {"trial": "NOAA-C01:1", "dimension": "provenance", "category": "unit", "excerpt": "non-pound weight units"},
+          {"trial": "NOAA-C01:2", "dimension": "provenance", "category": "unit", "excerpt": "Table 3 is in pounds, the snapshot is not"}
+        ]
+      }
+    ]
+  },
+  "additional_limits": [
+    "The 2025 representative-haul question is a preflight: the tools cannot reproduce or reconcile the report's representative-haul catch table.",
+    "The report-context cards are curated source summaries, not live report retrieval.",
+    "The haddock missing-measurement case contained no actual unknown measurements.",
+    "Informal subject-matter input concerned one historical excerpt, not this full evaluation or scientific approval."
+  ]
+}

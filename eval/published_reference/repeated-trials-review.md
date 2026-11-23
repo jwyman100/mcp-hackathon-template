@@ -1,9 +1,10 @@
 # Repeated trial evidence review
 
 These are historical trials of the earlier server. The revised server accepts
-exact returned species labels and adds caveats plus curated NOAA context; no
-post-change agent rerun has been performed. The findings below describe the
-original trials, not a claim that the same errors would recur today.
+exact returned species labels and adds caveats plus curated NOAA context.
+The findings below describe the original trials, not the later
+[candidate-v7](../results/candidate-v7-agent-evaluation.json) or
+[hardened-runtime](../results/hardened-agent-evaluation.json) agent runs.
 
 ## Trial set and verification
 

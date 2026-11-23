@@ -20,6 +20,12 @@ AGENT_EVALUATION_PATH = (
     / "results"
     / "candidate-v7-agent-evaluation.json"
 )
+CURRENT_EVALUATION_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "eval"
+    / "results"
+    / "hardened-agent-evaluation.json"
+)
 
 
 def load_agent_evaluation(path: Path = AGENT_EVALUATION_PATH) -> dict:
@@ -54,21 +60,82 @@ def load_agent_evaluation(path: Path = AGENT_EVALUATION_PATH) -> dict:
     return evidence
 
 
+def load_current_evaluation(path: Path = CURRENT_EVALUATION_PATH) -> dict:
+    evidence = json.loads(path.read_text(encoding="utf-8"))
+    mcp = evidence["mcp"]
+    no_tools = evidence["no_tools"]
+    comparison = evidence["data_access_comparison"]
+    review = evidence["answer_review"]
+    issues = [issue for batch in review["batches"] for issue in batch["issues"]]
+    issue_ids = [issue["trial"] for issue in issues]
+    if (
+        evidence["schema_version"] != 1
+        or mcp["completed_trials"]
+        != mcp["development_trials"]
+        + mcp["holdout_trials"]
+        + mcp["supplementary_trials"]
+        or no_tools["completed_trials"]
+        != no_tools["development_trials"] + no_tools["holdout_trials"]
+        or not 0 <= mcp["tool_errors"] <= mcp["tool_calls"]
+        or comparison["trials_per_arm"]
+        != len(comparison["case_ids"]) * comparison["repeats_per_case"]
+        or comparison["trials_per_arm"] > no_tools["completed_trials"]
+        or comparison["trials_per_arm"] > mcp["completed_trials"]
+        or not 0
+        <= comparison["mcp_supplied_requested_result"]
+        <= comparison["trials_per_arm"]
+        or not 0
+        <= comparison["no_tools_supplied_requested_result"]
+        <= comparison["trials_per_arm"]
+        or sum(batch["trials"] for batch in review["batches"])
+        != mcp["completed_trials"]
+        or len(issue_ids) != len(set(issue_ids))
+        or len(issue_ids) != review["identified_issue_trials"]
+        or any(issue["category"] not in {"cause", "unit"} for issue in issues)
+        or review["other_trials_unverified"] != mcp["completed_trials"] - len(issue_ids)
+        or review["scientific_review"] != "UNVERIFIED"
+    ):
+        raise ValueError("Current agent evaluation has inconsistent counts or review.")
+    return evidence
+
+
+def validate_evidence_sources(
+    report: dict, current_evaluation: dict, receipt: dict | None = None
+) -> None:
+    source = current_evaluation["source"]
+    if (
+        report.get("evaluation_type") != "scripted_stdio_mcp_integration_not_agent"
+        or report.get("source_sha256") != source["public_archive_sha256"]
+        or report.get("database_sha256") != source["sqlite_sha256"]
+        or (
+            receipt is not None
+            and (
+                receipt["public_source"]["source_sha256"]
+                != source["public_archive_sha256"]
+                or receipt["database_sha256"] != source["sqlite_sha256"]
+            )
+        )
+    ):
+        raise ValueError("Scripted, demo and current agent evidence sources differ.")
+
+
 def make_deck(
     template: Path,
     output: Path,
     report: dict,
     receipt: dict | None = None,
     agent_evaluation: dict | None = None,
+    current_evaluation: dict | None = None,
 ) -> None:
-    benchmark_path = Path(__file__).resolve().parents[1] / "eval" / "benchmark.json"
-    benchmark = json.loads(benchmark_path.read_text(encoding="utf-8"))
-    baseline = benchmark["baseline"]
     agent_evaluation = agent_evaluation or load_agent_evaluation()
-    trial_count = agent_evaluation["trial_count"]
-    tool_calls = agent_evaluation["tool_call_counts"]
+    current_evaluation = current_evaluation or load_current_evaluation()
+    validate_evidence_sources(report, current_evaluation, receipt)
+    mcp = current_evaluation["mcp"]
+    comparison = current_evaluation["data_access_comparison"]
+    review = current_evaluation["answer_review"]
+    issues = [issue for batch in review["batches"] for issue in batch["issues"]]
+    causal_issues = sum(issue["category"] == "cause" for issue in issues)
     feedback = agent_evaluation.get("targeted_feedback")
-    cases = {case["id"]: case for case in agent_evaluation["case_findings"]}
     presentation = Presentation(template)
     presentation.core_properties.title = "Fisheries SI-Ready Gateway"
     presentation.core_properties.author = ""
@@ -177,7 +244,7 @@ def make_deck(
         2.73,
         8.5,
         0.7,
-        "A scientist-centered path from public data to bounded MCP tools.",
+        "Helping AI use public fisheries data responsibly.",
         20,
         white,
     )
@@ -199,13 +266,13 @@ def make_deck(
         5.15,
         8.6,
         0.24,
-        "Demonstrated public prototype; enterprise controls are planned, not deployed.",
+        "A public-data prototype, not an official NOAA assessment.",
         10,
         white,
     )
 
     slide = presentation.slides[1]
-    start(slide, 2, "Less friction, with scientific context intact", "The challenge")
+    start(slide, 2, "Fisheries data can be hard to use", "The challenge")
     card(
         slide,
         0.5,
@@ -213,8 +280,7 @@ def make_deck(
         2.85,
         2.15,
         "THE QUESTION",
-        "Researchers navigate schema, filters and repeated clarification "
-        "before analysis.",
+        "How can scientists find the data they need?",
     )
     card(
         slide,
@@ -223,7 +289,7 @@ def make_deck(
         2.85,
         2.15,
         "THE RISK",
-        "An answer can confuse missing records with zero or catch with abundance.",
+        "AI can mistake missing data for zero or catch for fish population.",
         gold,
     )
     card(
@@ -232,8 +298,8 @@ def make_deck(
         1.55,
         2.85,
         2.15,
-        "THE HANDOFF",
-        "Give scientists traceable, bounded evidence they can judge and reuse.",
+        "THE GOAL",
+        "Show the numbers, their source and their limits.",
         pale,
     )
     text(
@@ -242,20 +308,19 @@ def make_deck(
         4.19,
         8.8,
         0.55,
-        "Intended benefit: reduce access and handoff friction; time savings "
-        "are not measured.",
+        "We hope to save researchers time; we have not measured that yet.",
         16,
         muted,
     )
 
     slide = presentation.slides[2]
-    start(slide, 3, "Five focused tools for the public demonstration", "The solution")
+    start(slide, 3, "Five tools for public fisheries data", "The solution")
     cards = [
-        ("01  FIND", "Search published species names."),
-        ("02  SUMMARIZE", "Catch and measurement completeness."),
-        ("03  COMPARE", "Two species, matching scope."),
-        ("04  COVERAGE", "Station, cruise and stratum counts."),
-        ("05  CONTEXT", "Curated, cited 2023/2025 NOAA facts; not expert-approved."),
+        ("01  FIND", "Find the right fish."),
+        ("02  SUMMARIZE", "Show catch and missing data."),
+        ("03  COMPARE", "Compare two fish using the same filters."),
+        ("04  COVERAGE", "Show station records and survey groups."),
+        ("05  CONTEXT", "Show selected facts from NOAA reports."),
     ]
     for index, (heading, body) in enumerate(cards):
         if index < 3:
@@ -269,19 +334,20 @@ def make_deck(
         4.86,
         8.9,
         0.22,
-        "Source checking is separate from scientific review; status is not reviewed.",
+        "Report facts are selected summaries, not a live search or "
+        "scientific approval.",
         11,
         muted,
     )
 
     slide = presentation.slides[3]
-    start(slide, 4, "What runs today—and what is only planned", "Architecture")
+    start(slide, 4, "How the prototype works", "Architecture")
     stages = [
-        ("PUBLIC ZIP", "NOAA\narchive"),
-        ("PREPARE", "Pinned hash\n+ validated joins"),
-        ("SNAPSHOT", "Read-only\nSQLite"),
-        ("MCP TOOLS", "Typed requests\n+ caveats"),
-        ("CLIENT", "Answer +\nhuman review"),
+        ("PUBLIC DATA", "NOAA\nsurvey files"),
+        ("PREPARE", "Check source\nand select data"),
+        ("SNAPSHOT", "Local, read-only\ndatabase"),
+        ("MCP TOOLS", "Find data\nand context"),
+        ("AI CLIENT", "AI answer +\nhuman review"),
     ]
     for index, (heading, body) in enumerate(stages):
         x = 0.5 + index * 1.87
@@ -294,8 +360,8 @@ def make_deck(
         3.62,
         4.35,
         1.28,
-        "DEMONSTRATED",
-        "Public snapshot, typed read-only tools, local stdio; no private data.",
+        "TODAY",
+        "Use a public copy of the data on this computer.",
         pale,
     )
     card(
@@ -304,16 +370,16 @@ def make_deck(
         3.62,
         4.35,
         1.28,
-        "PLANNED ENTERPRISE",
-        "Authorized Oracle access, SSO, per-tool authorization, guardrails and audit.",
+        "LATER",
+        "Approved access and security controls for internal data.",
         gold,
     )
 
     slide = presentation.slides[4]
-    start(slide, 5, "A pinned, portable snapshot", "Technical decisions")
-    card(slide, 0.5, 1.5, 2.85, 1.55, "2021-2025", "Spring survey; two species.")
-    card(slide, 3.58, 1.5, 2.85, 1.55, "1,570", "Selected station records.")
-    card(slide, 6.66, 1.5, 2.85, 1.55, "758", "Selected catch records.")
+    start(slide, 5, "A small public snapshot", "Technical decisions")
+    card(slide, 0.5, 1.5, 2.85, 1.55, "2021-2025", "Spring surveys; cod and haddock.")
+    card(slide, 3.58, 1.5, 2.85, 1.55, "1,570", "Station records in our data.")
+    card(slide, 6.66, 1.5, 2.85, 1.55, "758", "Catch records in our data.")
     rectangle(slide, 0.5, 3.42, 9.0, 1.4, pale)
     text(
         slide,
@@ -321,7 +387,7 @@ def make_deck(
         3.58,
         8.5,
         0.42,
-        "Offline/read-only snapshot | non-root container | pinned images and lockfile",
+        "Public data | works offline | read-only tools",
         14,
         ink,
     )
@@ -331,9 +397,8 @@ def make_deck(
         4.03,
         8.5,
         0.56,
-        "CI is configured to audit dependencies, scan secrets and build the container. "
-        "HTTP is loopback-only by default; ingress acknowledgement is not "
-        "authentication.",
+        "Automated checks look for security issues. "
+        "The server has no built-in sign-in.",
         12,
         ink,
     )
@@ -342,7 +407,7 @@ def make_deck(
     start(
         slide,
         6,
-        "Define a scientific schema contract",
+        "Make the data understandable",
         "Technical decisions",
     )
     card(
@@ -351,9 +416,8 @@ def make_deck(
         1.48,
         4.35,
         2.8,
-        "CONTRACT RECORDS",
-        "Analysis grain, filters, source identity, units, missingness and "
-        "supported conclusions.",
+        "EXPLAIN THE DATA",
+        "Show where the data came from and what we know about it.",
         pale,
     )
     card(
@@ -362,9 +426,8 @@ def make_deck(
         1.48,
         4.35,
         2.8,
-        "EXPERTS MUST REVIEW",
-        "Population meaning, sampling design, valid joins, scientific limits "
-        "and acceptable interpretations.",
+        "ASK SCIENTISTS",
+        "Scientists would check what the numbers mean and how to use them.",
         gold,
     )
     text(
@@ -373,7 +436,8 @@ def make_deck(
         4.65,
         8.9,
         0.38,
-        "Provisional example only—not approved by a fisheries subject-matter expert.",
+        "Scientists have not approved this example; the review process is not "
+        "yet in place.",
         15,
         muted,
     )
@@ -382,7 +446,7 @@ def make_deck(
     start(
         slide,
         7,
-        "Co-design, version, and test schemas",
+        "Clear questions, clear boundaries",
         "Technical decisions",
     )
     card(
@@ -391,8 +455,8 @@ def make_deck(
         1.55,
         2.85,
         2.35,
-        "BOUNDED INPUT",
-        "Typed years and strata, distinct species, and explicit request scope.",
+        "SET LIMITS",
+        "Only ask for fish and years in this dataset.",
     )
     card(
         slide,
@@ -400,8 +464,8 @@ def make_deck(
         1.55,
         2.85,
         2.35,
-        "SAFE HANDOFF",
-        "Search labels work in catch tools; unknown and empty states stay explicit.",
+        "MISSING DATA",
+        "Missing data stays unknown; it is not treated as zero.",
         pale,
     )
     card(
@@ -410,8 +474,8 @@ def make_deck(
         1.55,
         2.85,
         2.35,
-        "SCHEMA LIFECYCLE",
-        "Proposed expert review, versioned semantics, tests and re-review on change.",
+        "ASK SCIENTISTS",
+        "Review what the data means when sources change.",
     )
     text(
         slide,
@@ -419,8 +483,7 @@ def make_deck(
         4.3,
         8.9,
         0.55,
-        "Direct tests check the label fix; expert approval and preflight are "
-        "not implemented.",
+        "This expert-review process is planned, not yet in place.",
         15,
         muted,
     )
@@ -429,8 +492,8 @@ def make_deck(
     start(
         slide,
         8,
-        "A real scripted workflow with a replayable receipt",
-        "Demonstrated public prototype",
+        "Demo: a question with a trap",
+        "Scripted public-data demo",
     )
     rectangle(slide, 0.5, 1.39, 5.42, 2.58, light)
     text(
@@ -439,7 +502,7 @@ def make_deck(
         1.56,
         5.0,
         0.27,
-        "SEARCH  >  RETURNED LABEL  >  SUMMARY",
+        "FIND COD  >  SHOW CATCH  >  ADD CONTEXT",
         12,
         teal,
         True,
@@ -448,7 +511,7 @@ def make_deck(
         (0.7, 0.7, "YEAR", "2022", "2023"),
         (1.55, 1.2, "WEIGHT*", "609.780", "416.396"),
         (3.0, 1.65, "STATION RECORDS", "378", "77"),
-        (4.8, 0.8, "STRATA", "82", "13"),
+        (4.8, 0.8, "GROUPS", "82", "13"),
     ]
     for x, width, heading, first, second in columns:
         text(slide, x, 1.99, width, 0.30, heading, 11, muted, True)
@@ -460,7 +523,7 @@ def make_deck(
         3.57,
         5.0,
         0.22,
-        "* Expanded catch weight, unspecified source units.",
+        "* Expanded weight; unit unknown. Groups are survey strata.",
         11,
         muted,
     )
@@ -470,15 +533,9 @@ def make_deck(
         1.39,
         3.35,
         2.58,
-        "PUBLIC CONTEXT + RECEIPT",
-        (
-            "NOAA: 70 of 377 planned trawl stations; distinct from 77 snapshot "
-            "station records.\n\n"
-            f"Receipt: {len(receipt['tool_calls'])} exact calls/results, public "
-            "source, database and code hashes; replay verified."
-            if receipt
-            else "Receipt not supplied to the document builder."
-        ),
+        "NOAA CONTEXT",
+        "NOAA: 70 of 377 planned trawl stations.\n\n"
+        "That is not the same count as the 77 station records in our data.",
         pale,
     )
     text(
@@ -487,8 +544,7 @@ def make_deck(
         4.28,
         8.9,
         0.64,
-        "Human handoff: survey disruption is context, not proof of cause. "
-        "Which sampling locations and conditions are comparable?",
+        "The survey changed. That is context, not proof of why catch differed.",
         16,
         navy,
         True,
@@ -499,8 +555,7 @@ def make_deck(
         5.02,
         8.9,
         0.19,
-        "Calls are scripted, not model-selected. Full hashes and results are in "
-        "the public-only receipt; scientific review remains unverified.",
+        "This example is scripted; it is not an AI-selected answer.",
         10,
         muted,
     )
@@ -509,8 +564,8 @@ def make_deck(
     start(
         slide,
         9,
-        "Three layers answer different evaluation questions",
-        "Evaluation design",
+        "How did we check it?",
+        "Evaluation",
     )
     card(
         slide,
@@ -518,8 +573,8 @@ def make_deck(
         1.55,
         2.85,
         2.28,
-        "1  EDGE CASES",
-        "Invented fixtures test missing values, errors and importer boundaries.",
+        "1  CHECK THE EDGES",
+        "Try missing data, invalid requests and import errors.",
     )
     card(
         slide,
@@ -527,8 +582,8 @@ def make_deck(
         1.55,
         2.85,
         2.28,
-        "2  SCRIPTED MCP",
-        "12 cases x 3; checked against independent public-CSV calculations.",
+        "2  CHECK DATA",
+        "Compare tool results with a separate calculation from NOAA files.",
         pale,
     )
     card(
@@ -537,8 +592,8 @@ def make_deck(
         1.55,
         2.85,
         2.28,
-        "3  AGENT TRIALS",
-        "Historical model-chosen calls; answers remain selectively reviewed.",
+        "3  CHECK AI ANSWERS",
+        "Let the AI use the tools, then review its answers.",
     )
     text(
         slide,
@@ -546,24 +601,32 @@ def make_deck(
         4.18,
         8.9,
         0.66,
-        f"Candidate-v7: {trial_count} model-selected trials; answer reviews "
-        "remain UNVERIFIED.",
+        "Questions were repeated three times and were visible, not secret.",
         15,
         muted,
     )
 
     slide = presentation.slides[9]
-    start(slide, 10, "Evidence, not a perfect score", "Candidate-v7 evaluation")
+    start(
+        slide,
+        10,
+        "Getting data is only the first step",
+        "Current evaluation",
+    )
     metrics = [
         (
-            f"{baseline['scripted_passed']}/{baseline['scripted_trials']}",
-            "historical scripted baseline",
+            f"{report['passed']}/{report['trial_count']}",
+            "scripted tool checks passed",
         ),
-        (f"{report['passed']}/{report['trial_count']}", "separate scripted checks"),
-        (str(trial_count), "model-selected trials completed"),
+        (str(mcp["completed_trials"]), "AI trials with tools"),
         (
-            f"{tool_calls['successful']}/{tool_calls['total']}",
-            "successful tool calls",
+            f"{mcp['tool_calls'] - mcp['tool_errors']}/{mcp['tool_calls']}",
+            "tool calls had no errors",
+        ),
+        (
+            f"{comparison['mcp_supplied_requested_result']}/"
+            f"{comparison['trials_per_arm']}",
+            "requested result included",
         ),
     ]
     for index, (value, label) in enumerate(metrics):
@@ -577,8 +640,8 @@ def make_deck(
         3.35,
         8.8,
         0.38,
-        f"{tool_calls['failed']} malformed tool calls recovered; "
-        "successful retrieval is not an answer grade.",
+        f"Without tools: {comparison['no_tools_supplied_requested_result']}/"
+        f"{comparison['trials_per_arm']}; that AI had no access to the records.",
         16,
         navy,
         True,
@@ -589,7 +652,7 @@ def make_deck(
         3.9,
         8.8,
         0.36,
-        "Numerical tool outputs aligned with supplied references in reviewed cases.",
+        "This checks data access, not whether every answer is correct.",
         15,
     )
     text(
@@ -598,8 +661,9 @@ def make_deck(
         4.42,
         8.8,
         0.5,
-        f"All {trial_count} trial reviews remain UNVERIFIED; no overall "
-        "agent pass rate is claimed.",
+        f"{len(comparison['case_ids'])} questions, "
+        f"{comparison['repeats_per_case']} tries each; "
+        "the questions were visible, not secret.",
         15,
         muted,
     )
@@ -609,20 +673,28 @@ def make_deck(
         5.02,
         8.8,
         0.34,
-        "Candidate-v7 trials used FastMCP "
-        f"{agent_evaluation['configuration']['versions']['fastmcp']}; "
-        "the upgraded runtime was not agent-rerun.",
+        f"The {mcp['tool_calls']} calls came from the {mcp['completed_trials']} "
+        "main AI trials; extra test runs are separate.",
         11,
         muted,
     )
 
     slide = presentation.slides[10]
-    start(slide, 11, "What the candidate-v7 trials taught us", "Agent evidence")
+    start(slide, 11, "The AI spotted a useful clue", "Answer review")
     findings = [
-        ("D01", cases["NOAA-D01"]["slide_summary"]),
-        ("A02 / C01", cases["NOAA-A02"]["slide_summary"]),
-        ("Q10", cases["Q10"]["slide_summary"]),
-        ("Q12", cases["Q12"]["slide_summary"]),
+        (
+            f"{causal_issues} ANSWERS",
+            "Linked lower catches to reduced sampling; that context matters.",
+        ),
+        (
+            "DATA CHECK",
+            "Checked tool results matched calculations from NOAA files.",
+        ),
+        (
+            f"{review['other_trials_unverified']} OTHER",
+            "Not fully reviewed; no pass or fail claim.",
+        ),
+        ("NEXT", "Ask scientists to check how strongly we explain the results."),
     ]
     for index, (label, body) in enumerate(findings):
         y = 1.4 + index * 0.77
@@ -635,8 +707,8 @@ def make_deck(
         4.64,
         8.9,
         0.46,
-        "All trial records remain UNVERIFIED; these are evaluation observations, "
-        "not expert scientific approval.",
+        "The catch comparison cannot measure how much sampling explains. "
+        "Review was partial and AI-assisted.",
         13,
         muted,
     )
@@ -645,7 +717,7 @@ def make_deck(
     start(
         slide,
         12,
-        "Mission fit is the purpose; trust is the work",
+        "Useful access, with scientists in the loop",
         "Mission and next steps",
     )
     card(
@@ -654,9 +726,8 @@ def make_deck(
         1.48,
         4.35,
         2.43,
-        "NEFSC MISSION",
-        "Provide scientific information and tools for productive, sustainable, "
-        "healthy marine ecosystems and coastal communities.",
+        "THE MISSION",
+        "Make fisheries data easier to use to support healthy oceans.",
         pale,
     )
     card(
@@ -665,9 +736,8 @@ def make_deck(
         1.48,
         4.35,
         2.43,
-        "NEXT: GOVERNED ENTERPRISE",
-        "Co-design each schema with experts; validate identity, authorization, "
-        "audit and deployment controls before internal use.",
+        "BEFORE INTERNAL USE",
+        "Scientists review the meaning; approved access and security are needed.",
         gold,
     )
     text(
@@ -677,10 +747,10 @@ def make_deck(
         8.9,
         0.46,
         (
-            "Limited subject-matter input on one claim flagged spatial context; "
-            "no scientific approval or enterprise readiness is claimed."
+            "We received limited feedback on one earlier claim. "
+            "This is not scientific approval."
             if feedback is not None
-            else "No scientific approval or enterprise readiness is claimed."
+            else "This is not scientific approval or a system ready for internal use."
         ),
         15,
         navy,
@@ -698,55 +768,119 @@ def make_deck(
     )
 
     notes = [
-        "Public, read-only demonstration of a research-access idea. The fixed NOAA "
-        "snapshot is not the internal database or an official stock assessment.",
-        "The intended benefit is less schema-navigation and handoff friction. "
-        "No quantified researcher time savings have been measured.",
-        "The fifth tool is a manually curated source card for 2023 and 2025. "
-        "Its source-check date is not scientific approval; status is not reviewed. "
-        "It is not a live web or report-retrieval tool.",
-        "Today: public snapshot, typed read-only tools and local stdio. The future "
-        "Oracle/SSO/authorization/guardrail/audit design is planned only. SSO "
-        "identifies a user; it does not grant data access by itself.",
-        "Selected public snapshot: five cruises, 1,570 station records, 758 catch "
-        "records; Atlantic cod and haddock. Extraction June 25, 2026.",
-        "No valid-haul filtering, area weighting, effort standardization or vessel "
-        "calibration. Unknown source units do not prove units are not kg or pounds.",
-        "The scientific schema contract is provisional. Domain experts would "
-        "confirm grain, identifiers, filters, units, missingness and interpretation "
-        "before a future governed release.",
-        "Run the scripted demo with --receipt to create exact public MCP request/"
-        "result evidence. Replay checks source, database, server and result identity. "
-        "It is not an agent-selected run or a security audit.",
-        "The 12-question holdout is repository-visible, not blind. A01/B01/C01 "
-        "remain historical source-assisted cases. Candidate-v7 adds three "
-        "repetitions each for A02, D01 and C01; D01 tests a curated context card, "
-        "not live report discovery.",
-        f"Candidate-v7 includes {trial_count} model-selected trials across 15 "
-        "questions, three repeats each. "
-        f"{tool_calls['successful']} of {tool_calls['total']} recorded MCP calls "
-        f"succeeded; {tool_calls['failed']} malformed calls recovered. All "
-        "scientific reviews remain UNVERIFIED. Recorded code, question and "
-        "database hashes identify the evaluated candidate. These runs are not "
-        "a matched before/after model comparison.",
-        "Observed interpretation issues include unsupported causal explanations "
-        "in D01, missing-versus-zero reasoning in Q10:2, and an incorrect lowest "
-        "weight statement in Q12:3. These findings do not establish that the "
-        "tools resolved interpretation risk.",
-        "NEFSC's published mission is to provide scientific information and tools "
-        "for sustainable marine ecosystems and coastal communities. This project "
-        "is an independent prototype, not official NOAA/DOC communication or "
-        "endorsement. "
-        + (
-            f"Targeted feedback on {feedback['trial']} addresses one excerpt only: "
-            f"{feedback['responses'][0]['detail']} {feedback['limitations']} "
-            if feedback is not None
-            else ""
-        )
-        + "No enterprise readiness is claimed.",
+        "Fisheries scientists study the ocean to support healthy fish populations "
+        "and sustainable fishing. Our prototype helps an AI assistant find "
+        "public NOAA survey data and understand what the numbers can tell us.",
+        "Finding the right data can take work, and an AI can sound confident "
+        "even when it gets the meaning wrong. We want to make the data easier "
+        "to find while keeping its source and limits visible.",
+        "These five read-only tools help the assistant find a fish, show and "
+        "compare catches, count survey records, and share selected facts from "
+        "NOAA reports. The data cover cod and haddock from 2021 through 2025.",
+        "The server uses a public copy of NOAA data on this computer. It does "
+        "not connect to our private database. Any internal use would need "
+        "approved access and security controls.",
+        "This is a small, fixed selection of public survey records for cod and "
+        "haddock. The tools cannot change the data. The server has no built-in "
+        "sign-in, so this is not a system ready for internal use.",
+        "We want the assistant to show where a number came from, what it "
+        "means, and what is missing. This is an early example: a scientist "
+        "still needs to check what the numbers mean and how they should be used.",
+        "The server limits requests to the fish and years in this public "
+        "dataset. It keeps missing values visible instead of turning them into "
+        "zeros. We plan to work with scientists on a review process; that "
+        "process is not in place yet.",
+        "This is a scripted example using the real server, not an AI-selected "
+        "answer. It compares cod catch in 2022 and 2023. The lower total does "
+        "not prove the fish population declined or explain why catch differed. "
+        "The weight unit is unknown, and NOAA's 70 trawl stations are not the "
+        "same count as our 77 station records. The survey groups counted here "
+        "are not a measure of geographic area.",
+        "We try difficult cases, compare tool results with separate calculations "
+        "from NOAA files, and review AI answers. The questions were repeated "
+        "three times and were visible, not a blind test.",
+        (
+            f"Across {mcp['completed_trials']} main trials, all "
+            f"{mcp['tool_calls'] - mcp['tool_errors']} recorded tool calls "
+            "returned without an error. For "
+            f"{len(comparison['case_ids'])} questions repeated "
+            f"{comparison['repeats_per_case']} times, the AI with tools "
+            "included the requested result in "
+            f"{comparison['mcp_supplied_requested_result']} of "
+            f"{comparison['trials_per_arm']} answers; without access to the "
+            "records, the no-tool arm included it in "
+            f"{comparison['no_tools_supplied_requested_result']} of "
+            f"{comparison['trials_per_arm']}. This shows data access, not an "
+            "overall accuracy rate. The checked numerical tool results matched "
+            "separate calculations from original NOAA files. The questions "
+            "were visible, not a blind test."
+        ),
+        (
+            f"In {causal_issues} reviewed answers, the AI linked lower catches "
+            "to reduced sampling. That's useful context for interpreting the "
+            "result, but these catch totals cannot measure how much sampling "
+            "explains. "
+            "This partial review was AI-assisted, not a "
+            "scientific verdict; "
+            f"{review['other_trials_unverified']} other "
+            "trials were not fully reviewed. Fisheries scientists should help "
+            "check the interpretation."
+        ),
+        (
+            "Our goal is to help scientists find useful data and see its "
+            "limits. This is not an official NOAA assessment or scientific "
+            "approval. Before internal use, we would need scientific review "
+            "and approved access and security controls."
+        ),
     ]
     for slide, note in zip(presentation.slides, notes, strict=True):
         slide.notes_slide.notes_text_frame.text = note
+    presentation.save(output)
+
+
+def make_video_deck(source: Path, output: Path) -> None:
+    presentation = Presentation(source)
+    if len(presentation.slides) != 12:
+        raise ValueError("The full deck must contain 12 slides.")
+    keep = {0, 2, 7, 9, 10, 11}
+    # python-pptx has no public slide-deletion API.
+    for index in reversed(range(len(presentation.slides))):
+        if index not in keep:
+            slide_id = presentation.slides._sldIdLst[index]
+            presentation.slides._sldIdLst.remove(slide_id)
+            presentation.part.drop_rel(slide_id.rId)
+    for number, slide in enumerate(presentation.slides, start=1):
+        for shape in slide.shapes:
+            if shape.has_text_frame and shape.text.startswith("PUBLIC NOAA SNAPSHOT"):
+                paragraph = shape.text_frame.paragraphs[0]
+                paragraph.runs[0].text = (
+                    "PUBLIC NOAA SNAPSHOT  |  EVIDENCE-AWARE FISHERIES MCP"
+                    f"    {number:02}"
+                )
+    demo = presentation.slides[2]
+    replacements = {
+        "SCRIPTED PUBLIC-DATA DEMO": "LIVE DEMO  |  PUBLIC DATA",
+        "FIND COD  >  SHOW CATCH  >  ADD CONTEXT": (
+            "REFERENCE VALUES FROM OUR PUBLIC DATA"
+        ),
+        "This example is scripted; it is not an AI-selected answer.": (
+            "Reference values shown; the live recording is a separate example."
+        ),
+    }
+    for shape in demo.shapes:
+        if shape.has_text_frame and shape.text in replacements:
+            shape.text_frame.paragraphs[0].runs[0].text = replacements.pop(shape.text)
+    if replacements:
+        raise ValueError("Video demo slide changed; review its labels.")
+    demo.notes_slide.notes_text_frame.text = (
+        "Play your live demo recording here. We ask the assistant to find cod "
+        "and compare catch in 2022 and 2023. This question has a trap: a lower "
+        "catch does not necessarily mean fewer fish in the ocean. NOAA's 2023 "
+        "survey was shortened. That is relevant context, but these catch totals "
+        "alone cannot show how much survey changes explain the difference. "
+        "We check the tool calls, numbers, sources and limitations. This is one "
+        "live example, separate from the evaluation."
+    )
     presentation.save(output)
 
 
@@ -904,17 +1038,20 @@ def make_document(
     output: Path,
     report: dict,
     agent_evaluation: dict | None = None,
+    current_evaluation: dict | None = None,
 ) -> None:
-    benchmark_path = Path(__file__).resolve().parents[1] / "eval" / "benchmark.json"
-    benchmark = json.loads(benchmark_path.read_text(encoding="utf-8"))
-    baseline = benchmark["baseline"]
-    candidate = benchmark["candidate"]
     agent_evaluation = agent_evaluation or load_agent_evaluation()
-    agent_trials = agent_evaluation["trial_count"]
-    tool_calls = agent_evaluation["tool_call_counts"]
-    evaluated_fastmcp = agent_evaluation["configuration"]["versions"]["fastmcp"]
+    current_evaluation = current_evaluation or load_current_evaluation()
+    validate_evidence_sources(report, current_evaluation)
+    mcp = current_evaluation["mcp"]
+    no_tools = current_evaluation["no_tools"]
+    comparison = current_evaluation["data_access_comparison"]
+    review = current_evaluation["answer_review"]
+    issues = [issue for batch in review["batches"] for issue in batch["issues"]]
+    causal_issues = sum(issue["category"] == "cause" for issue in issues)
+
     document = Document(template)
-    document.core_properties.title = "Fisheries SI-Ready Gateway: Evaluation"
+    document.core_properties.title = "NOAA Fisheries Data Gateway: Evaluation"
     document.core_properties.author = ""
     document.core_properties.last_modified_by = ""
     document.core_properties.subject = ""
@@ -924,283 +1061,121 @@ def make_document(
     normal.font.size = DocPt(10)
     normal.paragraph_format.space_after = DocPt(4)
     normal.paragraph_format.line_spacing = 1.08
-    for name, size in (("Heading 1", 15), ("Heading 2", 12), ("Heading 3", 11)):
+    for name, size in (("Heading 1", 15), ("Heading 2", 12)):
         document.styles[name].font.size = DocPt(size)
     for element in list(document.element.body):
         if not element.tag.endswith("}sectPr"):
             document.element.body.remove(element)
-    document.add_heading("Fisheries SI-Ready Gateway: Evaluation", 0)
+
+    document.add_heading("NOAA Fisheries Data Gateway: Evaluation", 0)
     document.add_paragraph("GSA MCP and AI Agent Hackathon")
-    document.add_paragraph(f"Scripted benchmark run: {report['run_utc']}")
     document.add_paragraph(
-        "Status: scripted MCP integration, partial development numerical checks, "
-        f"and {agent_trials} candidate-v7 model-selected trials. Correct retrieval "
-        "coexists with interpretation errors. Overall scientific quality remains "
-        "UNVERIFIED. "
-        + (
-            "Limited subject-matter feedback addressed one historical excerpt; "
-            "no full scientific review or approval is claimed. "
-            if "targeted_feedback" in agent_evaluation
-            else "No full scientific review or approval is claimed. "
-        )
-        + "Not an official NOAA assessment."
-    )
-    document.add_paragraph(
-        "Mission alignment: NEFSC's published mission is to provide scientific "
-        "information and tools necessary for productive, sustainable, healthy "
-        "marine ecosystems and coastal communities. This independent public-data "
-        "prototype illustrates a research-access method; it is not NOAA endorsement. "
-        "Reduced researcher effort is an intended benefit, not a measured result."
-    )
-    document.add_heading("Evidence at a glance", 1)
-    document.add_paragraph(
-        f"Supplied scripted MCP checks: {report['passed']}/{report['trial_count']} "
-        "against independent public-CSV calculations. Candidate-v7 agent trials: "
-        f"{agent_trials} completed, with {tool_calls['successful']} successful "
-        f"calls out of {tool_calls['total']}; {tool_calls['failed']} malformed "
-        "calls recovered. These are different kinds of evidence, not an agent grade."
-    )
-    document.add_paragraph(
-        "The revised server now accepts exact returned species labels and offers "
-        "curated, cited NOAA context cards. Candidate-v7 agent trials now include "
-        "A02 and D01. D01 exercises the curated card, not live report discovery."
+        "A read-only prototype helps AI assistants retrieve public NOAA survey "
+        "data. The results are not an official NOAA assessment."
     )
     sections = [
         (
             "1. Overview and Objectives",
             [
-                "Evaluate a local public-data server for Atlantic cod/haddock spring "
-                "catch, matched comparisons and coverage. Fixed 2021-2025 slice; "
-                "NOAA extraction June 25, 2026.",
-                "Measure correct retrieval and explicit limits, not merely successful "
-                "tool execution. No overall agent pass rate or MCP lift is claimed.",
-                "Alignment: GSA Dataset Access Server track, using already-public "
-                "government data in a sandbox prototype. Required outputs are a "
-                "documented GitHub repository, deck with functionality demo, and "
-                "evaluation document. The event specifies no "
-                "public prototype deployment.",
-                "The NEFSC mission connection is directly relevant: provide "
-                "scientific information and tools for sustainable marine ecosystems "
-                "and coastal communities. This prototype does not establish a "
-                "measured time-to-insight improvement.",
+                "Make public cod and haddock data easier to find while showing "
+                "sources, survey coverage and scientific limits. The fixed snapshot "
+                "covers spring 2021-2025.",
+                "This supports research access; time savings have not been measured.",
             ],
         ),
         (
             "2. Testing Methodology",
             [
-                "Framework & reproducibility: pytest edge cases plus a separate MCP "
-                "stdio process. eval/run.py independently reads original CSVs and "
-                "aggregates Decimal values without application query helpers.",
-                "Golden dataset: eval/questions.json contains 12 versioned, rubric-"
-                "bearing questions adapted to the public snapshot. The development/"
-                "holdout split is prospective and visible, not blind. Each selected "
-                "scripted case repeats three times; the runner supplies tool "
-                "arguments.",
-                f"Before/after: baseline {baseline['scripted_passed']}/"
-                f"{baseline['scripted_trials']}; candidate "
-                f"{candidate['scripted_passed']}/{candidate['scripted_trials']} "
-                f"(development {candidate['development']['passed']}/"
-                f"{candidate['development']['trials']}; prospective holdout "
-                f"{candidate['holdout']['passed']}/{candidate['holdout']['trials']}). "
-                "This checks deterministic MCP/data behavior, not an agent.",
-                "Evaluators: exact identifier/count comparison; floating values use "
-                "relative tolerance 1e-10 and absolute tolerance 1e-8. Validate tool "
-                "output schemas and intended explicit error messages.",
-                "Test design: invented fixtures cover null/zero/absent values, "
-                "aliases, "
-                "invalid scope, duplicate keys, orphan rows and atomic import failure.",
-                "A shared eight-question development agent run supplied answers for "
-                "public-CSV numerical checks on Q01, Q02, Q03, Q07, Q09 and Q10. "
-                "The development tool traces, snapshot identity, and full scientific "
-                "rubric remain unverified; see the public-data evidence appendix.",
-                "The scripted public demo can export exact tool requests/results "
-                "with public-source, database, and server hashes. Replay fails on "
-                "source or response mismatch; it does not certify scientific validity.",
-                "A supplied repeat set adds 3 trials each for NOAA A01/B01/C01 and "
-                "Q01/Q02/Q03/Q05/Q07/Q08/Q09/Q10. This is 33 runs, not contiguous "
-                "Q01-Q09; Q04/Q06 were omitted. The 76 successful payloads matched "
-                "independent raw-CSV references. Six name errors (three Q02, three "
-                "B01) recovered on retry; Q08 made no MCP call. No companion model "
-                "configuration or evaluated database checksum was supplied.",
-                f"Candidate-v7 adds {agent_trials} model-selected trials across "
-                "15 questions with three repeats each. The recorded endpoint, "
-                "options, question hash, server bundle and SQLite identity are "
-                "consistent across batches; temperature was not recorded. These "
-                "are new candidate-v7 results, not a matched comparison to the "
-                "earlier model trials.",
-                "Supplementary NOAA A01/B01/C01 cases are source-assisted, separate "
-                "from the frozen 12 questions. The prompts supply report context; "
-                "they do not measure autonomous report retrieval. C01 is a "
-                "reconciliation-limits preflight, not the original full comparison.",
-                "Template deviation: the upstream example recommends Phoenix, "
-                "LangChain and LLM judges. This project uses a bounded model-selected "
-                "MCP loop, MLflow traces and explicit manual review dimensions. "
-                "No automated judge or Phoenix run is claimed. GSA requires "
-                "evaluation methodology/results, not that specific framework.",
-                "Prepared next experiment: a hardened-source agent rerun and an "
-                "optional same-model no-tool arm. The latter retains dictionary "
-                "context but has no numerical-data access; it measures access "
-                "plus tooling, not MCP against equally informed SQL. Neither new "
-                "run is claimed complete. Hash-bound analyst reviews separately "
-                "assess numerical fidelity, missing/zero, ranking, provenance, "
-                "causal claims, scope and tool use; scientific approval remains "
-                "UNVERIFIED.",
+                "We tested missing data and invalid requests, then ran 12 scripted "
+                "MCP questions three times each. An independent calculation from "
+                "the NOAA CSV files supplied the reference values.",
+                f"The AI chose its own tools in {mcp['completed_trials']} main "
+                "trials. A separate no-tool arm completed "
+                f"{no_tools['completed_trials']} trials. Each arm also had one "
+                "smoke trial.",
+                "For paired questions, both arms had the same model endpoint and "
+                "data dictionary. The no-tool arm had no underlying records and "
+                "different access instructions. Questions were repository-visible, "
+                "not a blind test.",
+                "We checked tool data against independently recalculated values "
+                "and partially reviewed the AI's answers. This review was "
+                "AI-assisted, not independent scientific review.",
             ],
         ),
         (
             "3. Performance Metrics",
             [
-                f"Scripted conformance: {report['passed']}/{report['trial_count']} "
-                "trials passed, including intended errors. See JSON case traces.",
-                "Baseline/candidate comparison confirms no scripted regression; "
-                "no LLM agent improvement is claimed.",
-                f"Scripted benchmark environment: {json.dumps(report['environment'])}.",
-                f"Candidate-v7 agent trials: {agent_trials}/{agent_trials} completed, "
-                "which is execution completion, not answer correctness. Of "
-                f"{tool_calls['total']} recorded MCP calls, "
-                f"{tool_calls['successful']} succeeded and "
-                f"{tool_calls['failed']} malformed search calls recovered. "
-                "All trial scientific-review statuses remain UNVERIFIED.",
-                "Tool payloads reviewed against the packaged references were "
-                "consistent in the requested numerical cases. Final answers still "
-                "include unsupported causal claims, a missing-versus-zero error, "
-                "and an incorrect lowest-weight statement. No overall agent pass "
-                "rate or independent CSV reprocessing is claimed.",
-                "Failure analysis: inspect trial errors in the selected results "
-                "JSON; intended scope/alias rejections are successes, not "
-                "unexpected server failures.",
-                "In historical A01 repeats, 395 matches 370 + 25, but the answer "
-                "repeats "
-                "the prompt's wrong page-1 locator (Overview is physical page 3).",
-                "B01 repeats: correct data and recovered name error in all three; "
-                "all three overstate what stratum counts show about area/cause.",
-                "C01 repeats: all 18 payloads match independent CSV reference; "
-                "answers decline haul reconciliation but overstate unit/method "
-                "certainty. Full payloads are now available.",
-                "Q02 repeats the same recovered label error 3/3. Q08 safely refuses "
-                "without a tool call; scripted tests separately cover server behavior.",
-                "Q10's empty stratum result is correct, but answers claim no tows or "
-                "no effort, which the snapshot alone cannot establish.",
-                f"All {agent_trials} candidate-v7 records say "
-                "scientific_review=UNVERIFIED. Three repetitions per question on "
-                "one endpoint are an observed sample, not a statistical reliability "
-                "estimate, overall pass rate, or controlled before/after result.",
+                f"Scripted tools: {report['passed']}/{report['trial_count']} checks "
+                "passed. These test tools, not AI reasoning.",
+                f"AI with MCP: {mcp['completed_trials']} main trials completed; "
+                f"{mcp['tool_calls'] - mcp['tool_errors']}/{mcp['tool_calls']} "
+                "recorded tool calls returned without an error.",
+                f"Data access: for {len(comparison['case_ids'])} questions repeated "
+                f"{comparison['repeats_per_case']} times, MCP supplied the requested "
+                f"result in {comparison['mcp_supplied_requested_result']}/"
+                f"{comparison['trials_per_arm']} trials; the no-tool arm supplied it "
+                f"in {comparison['no_tools_supplied_requested_result']}/"
+                f"{comparison['trials_per_arm']}. This includes no-record results "
+                "and measures result presence, not overall accuracy or an MCP "
+                "advantage over equally informed SQL or files.",
+                f"Answer review: {causal_issues} answers linked lower catches to "
+                "reduced sampling. This is useful context, although the totals "
+                "cannot measure how much it explains; the review flagged how "
+                "strongly some explanations were stated. "
+                "The "
+                f"{review['other_trials_unverified']} trials were not fully "
+                "reviewed. This partial AI-assisted review is not an overall "
+                "accuracy score or scientific approval. Scientific review "
+                "remains UNVERIFIED.",
             ],
         ),
         (
             "4. Security Considerations",
             [
-                "Data classification: only the official public extract and independent "
-                "invented test fixtures. No internal records or credentials.",
-                "Scope containment: fixed snapshot, read-only SQLite and bound "
-                "parameters. No arbitrary SQL tool or runtime external connector.",
-                "Preparation: fixed HTTPS URL, no redirects, size limits and pinned "
-                "SHA-256. Ambiguous selected keys fail import.",
-                "Transport: stdio by default; local HTTP is loopback-only. "
-                "Platform ports and non-loopback binds fail closed unless the "
-                "operator explicitly acknowledges trusted ingress. The setting "
-                "does not authenticate callers.",
-                "Container: digest-pinned images, locked dependencies, non-root "
-                "runtime and read-only snapshot. CI is configured for a dependency "
-                "audit with CycloneDX inventory, history secret scan and PR "
-                "dependency review. The container build, runtime protections and "
-                "MCP queries were verified locally; the GitHub workflow has not "
-                "been run on this worktree.",
-                "Historical boundary: candidate-v7 trials used FastMCP "
-                f"{evaluated_fastmcp}; the later security dependency upgrade was "
-                "tested separately and was not a model rerun.",
-                "Future enterprise design: SSO for identity, separate per-tool and "
-                "per-dataset authorization, approved egress, guardrails and auditable "
-                "operations. These controls are planned, not implemented or assessed "
-                "here; SSO alone is not data authorization.",
-                "Evidence boundary: only public-source findings belong in the "
-                "release. Credentials and raw account-specific traces are not "
-                "included. Ingress authentication, injection resistance, multi-user "
-                "authorization, privacy-reviewed logs, and production authorization "
-                "were not established by these tests.",
+                "The server uses a fixed public snapshot, read-only queries and "
+                "bounded tools. It has no arbitrary SQL tool.",
+                "The container uses a non-root user and pinned dependencies. "
+                "HTTP defaults to local access; an ingress setting does not "
+                "authenticate users. CI includes tests and security checks.",
+                "Authentication, data authorization and audit controls for "
+                "internal use are future work, not established by this prototype.",
             ],
         ),
         (
             "5. Lessons Learned & Recommendations",
             [
-                "Successful data retrieval does not establish a correct explanation. "
-                "Historical B01 recovered from a returned-label mismatch, then "
-                "made unsupported "
-                "interpretive claims. C01 found a valid boundary but overstated why "
-                "it exists. A01 exposed an evaluator-authored citation error.",
-                "The revised catch tools now accept exact returned labels; direct "
-                "tests cover both species. New server caveats address area, empty "
-                "station results and unknown units. Curated NOAA context cards "
-                "cover 2023 and 2025 without live report retrieval. The candidate-v7 "
-                "agent runs demonstrate card use and also expose interpretation "
-                "errors; they do not prove the changes resolved those errors.",
-                "Unknown measurements are not zeros. Catch totals and station counts "
-                "are not standardized abundance indices. Published weight units "
-                "remain unspecified in the linked metadata.",
-                "Limitations: two species, five years, small datasets, and no "
-                "full independent scientific review. The earlier repeat set lacks "
-                "a verified evaluated database identity. Full representative-haul "
-                "reconciliation remains "
-                "unresolved. Do not convert unknown units into a claimed conversion.",
-                "Future work: use the observed errors to guide expert review and "
-                "candidate mitigations. Evaluate any changed prompt, schema or "
-                "tool behavior in a matched study before claiming improvement.",
-                "Future operating model: experts define and approve each versioned "
-                "schema contract; developers implement bounded tools and regression "
-                "tests; reviewers revalidate on source or methodology changes. "
-                "The included example is provisional and has no expert approval.",
-                "Release gates: confirm agency permission, repository visibility, "
-                "participant-only upload route and current deadline cutoff; the "
-                "public event page may lag participant updates. No push, public "
-                "deployment or submission is performed by generating these files.",
+                "The AI's use of survey context helps readers interpret catches, "
+                "but the totals cannot measure the effect of survey changes.",
+                (
+                    "Limited subject-matter feedback concerned one historical "
+                    "excerpt, not the full evaluation. No scientific approval "
+                    "is claimed."
+                    if "targeted_feedback" in agent_evaluation
+                    else "No scientific approval is claimed."
+                ),
+                "Have scientists review interpretations before research use. "
+                "Test any future changes before claiming improvement.",
             ],
         ),
     ]
     for heading, paragraphs in sections:
-        document.add_heading(heading, 1)
+        paragraph = document.add_heading(heading, 1)
+        if heading == "4. Security Considerations":
+            paragraph.paragraph_format.page_break_before = True
         for text in paragraphs:
             document.add_paragraph(text)
-    add_evidence_appendix(document, Path(__file__).with_name("schema-contract.md"))
-    add_evidence_appendix(
-        document, Path(__file__).with_name("public-evaluation-appendix.md")
-    )
-    add_agent_evaluation(document, agent_evaluation)
-    document.add_heading("Sources and reproduction", 1)
-    document.add_paragraph("https://www.fisheries.noaa.gov/inport/item/22561")
+    document.add_heading("Sources and details", 1)
     document.add_paragraph(
-        "https://www.fisheries.noaa.gov/about/northeast-fisheries-science-center"
+        "NOAA metadata: https://www.fisheries.noaa.gov/inport/item/22561"
     )
     document.add_paragraph(
-        "https://www.fisheries.noaa.gov/new-england-mid-atlantic/ecosystems/"
-        "2023-northeast-spring-bottom-trawl-survey-summary"
-    )
-    document.add_paragraph("https://repository.library.noaa.gov/view/noaa/72382")
-    document.add_paragraph(f"Public archive SHA-256: {report['source_sha256']}")
-    document.add_paragraph(
-        "Scripted run evidence and reproduction details: submission/README.md."
+        "Repository: eval/results/hardened-agent-evaluation.json contains the "
+        "current run details and review limits. Earlier evidence is preserved "
+        "in eval/results/candidate-v7-agent-evaluation.json."
     )
     document.add_paragraph(
-        r"uv run python eval\run.py --archive C:\path\to\public-survey.zip "
-        r"--output C:\path\to\new-scripted-results.json"
-    )
-    document.add_paragraph(
-        r"Scripted MCP demo: uv run python submission\demo.py "
-        r"--receipt C:\path\to\new-demo-receipt.json; replay with "
-        r"--replay C:\path\to\new-demo-receipt.json. "
-        r"(or .\.venv\Scripts\python.exe submission\demo.py on Windows)."
-    )
-    document.add_paragraph(
-        "Read eval/README.md for the complete methodology and limits. "
-        "Acknowledgement: NOAA/NMFS/NEFSC. Not official NOAA/DOC communication."
-    )
-    document.add_paragraph(
-        "GSA instructions: "
-        "https://www.gsa.gov/super-intelligence/si-community-of-practice/"
-        "events-and-training/mcp-server-and-si-agent-government-hackathon"
-    )
-    document.add_paragraph(
-        "Template alignment and release checklist: submission/README.md. "
-        "Upstream: https://github.com/GSA-TTS/mcp-hackathon-template"
+        "Method, source links and reproduction: eval/README.md and "
+        "submission/README.md. Raw account-specific exports are not included."
     )
     for section in document.sections:
         section.left_margin = section.right_margin = DocInches(0.8)
@@ -1215,12 +1190,16 @@ def main():
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--agent-evaluation", type=Path, default=AGENT_EVALUATION_PATH)
     parser.add_argument(
+        "--current-evaluation", type=Path, default=CURRENT_EVALUATION_PATH
+    )
+    parser.add_argument(
         "--output-dir", type=Path, default=Path("submission/candidate-v7")
     )
     args = parser.parse_args()
     report = json.loads(args.results.read_text(encoding="utf-8"))
     receipt = json.loads(args.receipt.read_text(encoding="utf-8"))
     agent_evaluation = load_agent_evaluation(args.agent_evaluation)
+    current_evaluation = load_current_evaluation(args.current_evaluation)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     make_deck(
         args.deck_template,
@@ -1228,14 +1207,20 @@ def main():
         report,
         receipt,
         agent_evaluation,
+        current_evaluation,
+    )
+    make_video_deck(
+        args.output_dir / "fisheries-deck.pptx",
+        args.output_dir / "fisheries-video-deck.pptx",
     )
     make_document(
         args.evaluation_template,
         args.output_dir / "fisheries-evaluation.docx",
         report,
         agent_evaluation,
+        current_evaluation,
     )
-    print("Generated fisheries-deck.pptx and fisheries-evaluation.docx.")
+    print("Generated the full deck, video deck and evaluation document.")
 
 
 if __name__ == "__main__":

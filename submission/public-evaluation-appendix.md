@@ -6,9 +6,9 @@ adds explicit interpretation caveats, and exposes manually curated 2023/2025
 NOAA context cards. At the time of this earlier review, no post-change model
 trials or independent scientific review had been performed. A separate later
 [candidate-v7 run](../eval/results/candidate-v7-agent-evaluation.json) has
-since been evaluated; the latest security-hardened runtime has not been
-agent-rerun. The original answers, errors and `UNVERIFIED` statuses remain
-unchanged.
+since been evaluated. A separate later [hardened-runtime agent run](../eval/results/hardened-agent-evaluation.json)
+is also available. The original answers, errors and `UNVERIFIED` statuses
+remain unchanged.
 
 ## Scope and method
 

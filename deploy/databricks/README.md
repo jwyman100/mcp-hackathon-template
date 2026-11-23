@@ -158,9 +158,10 @@ citation erratum: its Overview is on physical PDF page 3, not 1; the completed
 trial's prompt is preserved. The revised notebook also offers
 `published_reference_corrected` (A02) and
 `published_report_context` (D01). Both were included in the historical
-candidate-v7 run; neither has been rerun with the hardened runtime. D01 asks
-for context without providing the facts in the prompt, but can only test the
-curated card, not live report discovery.
+candidate-v7 run and in the later
+[hardened-runtime run](../../eval/results/hardened-agent-evaluation.json). D01
+asks for context without providing the facts in the prompt, but can only test
+the curated card, not live report discovery.
 
 ### Rerun on the hardened runtime
 
@@ -184,9 +185,9 @@ each split; compare answers and interpretation as well as execution. Scientific
 reviews stay UNVERIFIED until appropriately reviewed.
 
 The pinned notebook stack is in `requirements-eval.txt`. The loop can be tested
-offline with the existing test suite, but the actual sandbox installation,
-endpoint permissions, live model response and MLflow storage require a workspace
-smoke run. No Databricks result is claimed by generating the notebook.
+offline with the existing test suite, but a new workspace still requires a
+smoke run to check installation, endpoint permissions, model response and
+MLflow storage. Generating a notebook does not itself run an experiment.
 
 ### Independent numerical check
 
